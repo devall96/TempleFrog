@@ -1,0 +1,27 @@
+format_version = 1
+id = "templefrog.cheats"
+version = "1.0.0"
+name = "Cheats"
+author = "TempleFrog"
+description = "CodeBreaker-style cheats. They change the game's memory while enabled, so play-throughs with them on are not stock."
+license = "MIT"
+resolver = "declarative"
+save_compatibility = "shared"
+
+[[target]]
+game_id = "frogger-adventures-temple-of-the-frog-us"
+rom_sha1 = "7b4c27009198df18555e63fb5dcad223eaf09815"
+
+# Lives: u8 at IWRAM 0x030035E0, the HUD run-state (JRickey's decomp,
+# docs/game-model.md: lives +0, init 5, cap 99). Held at 9 every frame.
+[[feature]]
+id = "infinite-lives"
+name = "Infinite lives"
+description = "Frogger never runs out of lives (kept at 9)."
+group = "Cheats"
+default_enabled = false
+
+[[cheat]]
+feature = "infinite-lives"
+format = "codebreaker"
+codes = ["330035E0 0009"]

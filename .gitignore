@@ -1,0 +1,49 @@
+# Copyrighted game data: never commit
+*.gba
+*.GBA
+*.bin
+*.sav
+*.srm
+*.zip
+*.7z
+bios/
+roms/
+
+# Generated recompiler output and build trees
+generated/*
+!generated/README.md
+saves/
+*.exe
+*.dll
+build/
+build-*/
+out/
+tools/gbarecomp-cli/
+
+# Runtime caches, coverage and self-heal proposals (review by hand, never auto-merge)
+recomp_cache/
+recomp_coverage*.json
+recomp_master_misses*.toml.frag
+recomp_seed_proposals.toml
+selfheal*.json
+
+# Captures and diagnostics
+*.csv
+*.log
+captures/
+
+# Editors
+.vs/
+.vscode/
+*.user
+
+# Player launcher state (written next to the working directory)
+rom.cfg
+bios.cfg
+keybinds.ini
+config.ini
+input.ini
+mods/state.toml
+
+# Local tool settings
+.claude/

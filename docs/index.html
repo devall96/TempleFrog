@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TempleFrog</title>
+  <meta name="description" content="Frogger's Adventures: Temple of the Frog on PC: a fan-made static recompilation with enhanced audio, filters, save states, rewind, controller support and five languages. Bring your own ROM and BIOS.">
+  <link rel="icon" href="art/favicon.png" type="image/png">
+  <meta property="og:title" content="TempleFrog">
+  <meta property="og:description" content="Frogger's Adventures: Temple of the Frog on PC, recompiled. Bring your own ROM and BIOS.">
+  <meta property="og:image" content="https://devall96.github.io/TempleFrog/art/banner.png">
+  <style>
+    @font-face { font-family: "Chewy"; src: url("fonts/Chewy-Regular.ttf") format("truetype"); font-display: swap; }
+    @font-face { font-family: "Fredoka"; src: url("fonts/Fredoka-Medium.ttf") format("truetype"); font-weight: 400 500; font-display: swap; }
+    @font-face { font-family: "Fredoka"; src: url("fonts/Fredoka-SemiBold.ttf") format("truetype"); font-weight: 600 700; font-display: swap; }
+    :root {
+      --bg: #1a0d0c; --panel: #302010; --panel-2: #3a2410; --line: #4e3a1c; --moss: #4e7a14;
+      --lime: #a0e010; --mint: #a0f090; --cream: #f0f0c0; --sand: #c8b088; --faint: #9c8668; --warn: #e0a080;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg); color: var(--cream);
+      font: 17px/1.6 "Fredoka", "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse at 20% -10%, rgba(160,224,16,.16), transparent 55%),
+        radial-gradient(ellipse at 90% 110%, rgba(78,122,20,.22), transparent 60%),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='60' viewBox='0 0 120 60'><path d='M0 0h120M0 30h120M0 60h120M30 0v30M90 0v30M0 30v30M60 30v30M120 30v30' fill='none' stroke='%23c8b088' stroke-opacity='.05' stroke-width='2'/></svg>");
+    }
+    main { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 28px 16px 64px; }
+    a { color: var(--lime); }
+    header { display: flex; align-items: center; gap: 14px; margin-bottom: 30px; flex-wrap: wrap; }
+    header img { width: 48px; height: 48px; border-radius: 11px; }
+    header .name { font-family: "Chewy", "Fredoka", sans-serif; font-size: 26px; color: var(--lime); line-height: 1; }
+    header .sub { color: var(--faint); font-size: 13px; }
+    header nav { margin-left: auto; display: flex; gap: 18px; font-size: 15px; }
+    header nav a { color: var(--sand); text-decoration: none; }
+    header nav a:hover { color: var(--cream); }
+    .eyebrow { color: var(--mint); letter-spacing: .3em; font-size: 12px; font-weight: 600; }
+    h1 { font-family: "Chewy", "Fredoka", sans-serif; font-weight: 400; font-size: clamp(38px, 7vw, 66px); line-height: 1.05;
+         margin: 8px 0 14px; color: var(--lime); text-shadow: 3px 3px 0 #100808; }
+    .lead { color: var(--sand); font-size: 19px; max-width: 780px; }
+    .downloads { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 26px 0 10px; }
+    .dl { display: block; text-decoration: none; color: var(--cream); padding: 18px 20px; border-radius: 16px;
+          border: 2px solid var(--moss); background: rgba(48,32,16,.88); }
+    .dl:hover { border-color: var(--lime); box-shadow: 0 0 24px rgba(160,224,16,.25); }
+    .dl.primary { border-color: var(--lime); background: linear-gradient(180deg, rgba(160,224,16,.24), rgba(78,122,20,.12)); }
+    .dl .os { font-size: 12px; letter-spacing: .2em; color: var(--mint); font-weight: 600; }
+    .dl .file { font-size: 19px; font-weight: 600; margin: 4px 0 2px; word-break: break-all; }
+    .dl .meta { color: var(--faint); font-size: 14px; }
+    .release { color: var(--faint); font-size: 14px; }
+    .callout { border-left: 4px solid var(--warn); background: rgba(224,160,128,.08); border-radius: 0 12px 12px 0;
+               padding: 12px 16px; margin: 18px 0; }
+    .callout.green { border-color: var(--lime); background: rgba(160,224,16,.07); }
+    .callout b { color: var(--warn); }
+    .callout.green b { color: var(--lime); }
+    h2 { font-family: "Chewy", "Fredoka", sans-serif; font-weight: 400; font-size: 32px; color: var(--mint); margin: 48px 0 14px; letter-spacing: .02em; }
+    figure { margin: 0; }
+    .hero-shot img, .shots img { width: 100%; display: block; border-radius: 14px; border: 2px solid var(--line); image-rendering: auto; }
+    .hero-shot { margin: 22px 0 6px; }
+    .hero-shot img { border-color: var(--moss); box-shadow: 0 0 44px rgba(160,224,16,.16); }
+    .pixel img { image-rendering: pixelated; }
+    figcaption { color: var(--faint); font-size: 14px; margin-top: 6px; }
+    .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 18px; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+    .feature { border: 2px solid var(--line); background: rgba(48,32,16,.8); border-radius: 14px; padding: 14px 16px; }
+    .feature h3 { margin: 0 0 6px; font-size: 18px; color: var(--lime); font-weight: 600; }
+    .feature p { margin: 0; color: var(--sand); font-size: 15px; }
+    ol { padding-left: 22px; color: var(--sand); }
+    ol b { color: var(--cream); }
+    table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 10px 0; }
+    td, th { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { color: var(--mint); font-weight: 600; background: rgba(48,32,16,.7); }
+    code { background: rgba(160,224,16,.10); padding: 1px 6px; border-radius: 6px; font-size: 14px; word-break: break-all; }
+    footer { margin-top: 56px; color: var(--faint); font-size: 14px; border-top: 2px solid var(--line); padding-top: 16px; }
+    @media (max-width: 600px) { header nav { margin-left: 0; width: 100%; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="art/icon.png" alt="">
+    <div><div class="name">TempleFrog</div><div class="sub">Unofficial PC port of Frogger's Adventures: Temple of the Frog</div></div>
+    <nav><a href="https://github.com/devall96/TempleFrog">GitHub</a><a href="https://github.com/devall96/TempleFrog/releases">Releases</a><a href="https://github.com/devall96/TempleFrog/issues">Report a problem</a></nav>
+  </header>
+
+  <div class="eyebrow">STATIC RECOMPILATION · VERSION 0.1</div>
+  <h1>Temple of the Frog, on your PC</h1>
+  <p class="lead">TempleFrog turns the Game Boy Advance classic into a native Windows program, recompiled ahead of time from your own copy of the game. Then it adds what a PC port should have: a launcher, cleaner high-precision sound, sharp filters, save states, rewind, fast boot, controller support with matching button prompts, and the whole interface in the game's five languages.</p>
+
+  <div class="downloads">
+    <a class="dl primary" href="https://github.com/devall96/TempleFrog/releases/download/v0.1.0/TempleFrog-0.1.0-windows-x64.zip">
+      <div class="os">WINDOWS · 64-BIT</div>
+      <div class="file">TempleFrog-0.1.0-windows-x64.zip</div>
+      <div class="meta">About 14 MB · unzip and run, no installer</div>
+    </a>
+    <a class="dl" href="https://github.com/devall96/TempleFrog/releases">
+      <div class="os">EVERYTHING ELSE</div>
+      <div class="file">All releases and checksums</div>
+      <div class="meta">Release notes, SHA256SUMS.txt, BUILDINFO.json</div>
+    </a>
+  </div>
+  <p class="release">Linux, Steam Deck and Android builds are planned. You can build it yourself from the <a href="https://github.com/devall96/TempleFrog#building-it">source</a>.</p>
+
+  <div class="callout"><b>Bring your own ROM and BIOS.</b> No game files are included, and none ever will be. You need your own <i>Frogger's Adventures: Temple of the Frog</i> (USA) ROM and a Game Boy Advance BIOS dumped from your own hardware. The launcher's box art is made from your ROM, on your PC.</div>
+  <div class="callout green"><b>Made with AI.</b> TempleFrog's code, the art and this page were written or made by Claude, Anthropic's AI, through Claude Code. <a href="https://github.com/devall96">devall96</a> came up with it, directs it and tests every build, but no human reviews the code line by line. You run it at your own risk.</div>
+  <div class="callout green"><b>Not official.</b> A fan project, not affiliated with Konami or Nintendo, and for non-commercial use only.</div>
+
+  <figure class="hero-shot">
+    <img src="images/title-widescreen.png" alt="The title screen in a 16:9 window with blurred side bars" loading="lazy">
+    <figcaption>The title in a 16:9 window: the side bars glow with the game instead of sitting black.</figcaption>
+  </figure>
+
+  <h2>What it does</h2>
+  <div class="features">
+    <div class="feature"><h3>The real game</h3><p>Recompiled to native code ahead of time, running the real GBA BIOS from your own dump. No emulator core plays the game.</p></div>
+    <div class="feature"><h3>Enhanced audio</h3><p>A new mixer for the game's sound engine: floating point at 48 kHz, clean resampling, smooth notes, cleaned-up samples and a limiter. No hiss or crunch.</p></div>
+    <div class="feature"><h3>Sharp or smooth</h3><p>Integer scaling, sharp bilinear, HQ2x/3x/4x, scanlines, LCD grid and ghosting, and GBA, GBA SP or vivid colours.</p></div>
+    <div class="feature"><h3>Blurred side bars</h3><p>Wide or tall windows show a soft glow of the game around the picture. Plain black is one switch away.</p></div>
+    <div class="feature"><h3>Fast boot</h3><p>Straight past the BIOS and start-up logos to the title in about a second and a half.</p></div>
+    <div class="feature"><h3>Save states and rewind</h3><p>Save and load states, rewind 30 seconds, fast-forward, and pause when you switch windows.</p></div>
+    <div class="feature"><h3>Your controller</h3><p>Keyboard or pad, remappable, with prompts that match Xbox, PlayStation or Switch buttons, and optional rumble.</p></div>
+    <div class="feature"><h3>Five languages</h3><p>English, French, German, Spanish and Italian for the launcher and menus, and the game's own language screen answered for you.</p></div>
+    <div class="feature"><h3>Speedrun timer</h3><p>Level time, total and last split, counted in game frames so pausing never adds time.</p></div>
+    <div class="feature"><h3>Private</h3><p>No accounts, no telemetry, no network use at all. Saves and states live in one folder next to the program.</p></div>
+  </div>
+
+  <h2>Screenshots</h2>
+  <div class="shots">
+    <figure><img src="images/launcher-play.png" alt="The launcher's Play page" loading="lazy"><figcaption>The launcher, with box art made from your ROM.</figcaption></figure>
+    <figure><img src="images/launcher-settings.png" alt="The launcher's Settings page" loading="lazy"><figcaption>Settings: display, filters, sound, system and shortcuts.</figcaption></figure>
+    <figure class="pixel"><img src="images/level1.png" alt="Level 1" loading="lazy"><figcaption>The first level at native 3:2.</figcaption></figure>
+    <figure class="pixel"><img src="images/jungle.png" alt="A jungle temple level" loading="lazy"><figcaption>Deeper in: a jungle temple.</figcaption></figure>
+    <figure><img src="images/menu-graphics.png" alt="The in-game menu's Graphics tab" loading="lazy"><figcaption>The in-game menu: every filter while you play.</figcaption></figure>
+    <figure><img src="images/menu-game.png" alt="The in-game menu's Game tab" loading="lazy"><figcaption>Game options: language, rumble, speedrun timer.</figcaption></figure>
+    <figure><img src="images/menu-french.png" alt="The in-game menu in French" loading="lazy"><figcaption>Everything in five languages (here French).</figcaption></figure>
+    <figure class="pixel"><img src="images/caves.png" alt="The lava caves" loading="lazy"><figcaption>The lava caves.</figcaption></figure>
+  </div>
+  <p class="release">Game graphics in these screenshots come from a legally obtained copy of the game, as they do on your PC. They're © Konami and aren't part of TempleFrog.</p>
+
+  <h2>Getting started</h2>
+  <ol>
+    <li><b>Download</b> the zip above and unzip it anywhere you can write to (not <i>Program Files</i>).</li>
+    <li><b>Add your files:</b> your ROM as <code>roms\frog_us.gba</code> and your BIOS as <code>bios\gba_bios.bin</code>, or pick them in the launcher.</li>
+    <li><b>Run TempleFrog.exe</b> and press <b>PLAY</b>. In game, <b>Esc</b> opens the menu (on a pad: click a stick, or Select + Start).</li>
+  </ol>
+  <table>
+    <tr><th>File</th><th>Version</th><th>SHA-1</th></tr>
+    <tr><td>ROM</td><td>Frogger's Adventures - Temple of the Frog (USA) (En,Fr,De,Es,It), <code>AFRE</code></td><td><code>7b4c27009198df18555e63fb5dcad223eaf09815</code></td></tr>
+    <tr><td>BIOS</td><td>Game Boy Advance BIOS</td><td><code>300c20df6731a33952ded8c436f7f186d25d3492</code></td></tr>
+  </table>
+
+  <footer>
+    TempleFrog is built on <a href="https://github.com/mstan/gbarecomp">gbarecomp</a> and <a href="https://github.com/mstan/recomp-ui">recomp-ui</a> by Matthew Stanley, with help from the
+    <a href="https://github.com/JRickey/frog-adv-temple-decomp">frog-adv-temple-decomp</a> project. Its own code is MIT; as a whole it's for non-commercial use only
+    (gbarecomp is PolyForm Noncommercial 1.0.0). <a href="https://github.com/devall96/TempleFrog/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>.<br>
+    <i>Frogger's Adventures: Temple of the Frog</i> and <i>Frogger</i> are © Konami. Game Boy Advance is a trademark of Nintendo. Not affiliated with Konami or Nintendo.
+  </footer>
+</main>
+</body>
+</html>

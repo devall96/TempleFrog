@@ -1,0 +1,108 @@
+# Frogger's Adventures: Temple of the Frog (USA, AFRE).
+# Evidence for addresses: JRickey/frog-adv-temple-decomp (docs/memory-map.md, linker.ld).
+
+[game]
+short_name = "templefrog"
+
+[program]
+name = "Frogger's Adventures: Temple of the Frog"
+id = "AFRE"
+load_address = 0x08000000
+size = 0x00400000
+entry_pc = 0x08000000
+speculative_literal_harvest = false
+# Decomp: code occupies [0x08000000, 0x08036000); graphics, GAX audio data,
+# level/script data and tables follow.
+aot_scan_start = 0x080000C0
+aot_scan_end = 0x08036000
+static_resume_all = true
+
+[identity]
+sha1 = "7b4c27009198df18555e63fb5dcad223eaf09815"
+md5 = "228cbf6936579b32b8cc6d7b092dad9c"
+
+[bios]
+path = "gbarecomp/bios/gba_bios.bin"
+sha1 = "300c20df6731a33952ded8c436f7f186d25d3492"
+hle = false
+
+[rom]
+path = "roms/frog_us.gba"
+sha1 = "7b4c27009198df18555e63fb5dcad223eaf09815"
+
+# ROM carries EEPROM_V121 at 0x082F8E8C; the decomp's save code calls
+# Eeprom_SetSizeConfig(4) (4 Kbit = 512 bytes).
+[save]
+type = "eeprom"
+size = 512
+path = "saves/frog_us.sav"
+
+[runtime]
+debug_port = 19920
+window_title = "TempleFrog"
+
+[video]
+view_width = 240
+resize_view = false
+
+# The game's sound engine is not MP2K. `shadow = true` turns on TempleFrog's
+# own native high-quality mixer (src/gax_hq.cpp) by default; players can
+# switch it in the in-game menu (Audio > Enhanced audio) and their choice is
+# remembered.
+[audio]
+shadow = true
+
+# IrqHandler_Install (0x08000820) DMAs 0x400 halfwords (2048 bytes) starting at
+# IntrMain (0x0800012C) to IWRAM 0x030058A0 and points the BIOS IRQ vector
+# (0x03007FFC) at the copy.
+[[code_copy]]
+runtime_start = 0x030058A0
+source_start = 0x0800012C
+size = 0x00000800
+name = "iwram_intr_main"
+note = "decomp src/game/sub_08000820.c: DMA3 cnt = DMA_ENABLE | 0x400 (halfwords)"
+
+[[extra_func]]
+addr = 0x030058A0
+source_addr = 0x0800012C
+mode = "arm"
+name = "IntrMain_iwram"
+note = "BIOS IRQ vector target after IrqHandler_Install"
+
+# ARM routines at the start of IWRAM, after a 0x30-byte pointer header
+# (probably the GAX sound engine's fast path). Found from a frame-900 IWRAM
+# dump (GBARECOMP_IWRAM_DUMP), each block matched byte for byte against the ROM.
+# The first headless runs bridged 0x03000030 and 0x03000210 through the
+# interpreter (self-heal miss log).
+[[code_copy]]
+runtime_start = 0x03000030
+source_start = 0x08033000
+size = 0x000001E0
+name = "iwram_arm_a"
+note = "frame-900 IWRAM dump == ROM 0x08033000..0x080331E0"
+
+[[code_copy]]
+runtime_start = 0x03000210
+source_start = 0x08032E54
+size = 0x00000114
+name = "iwram_arm_b"
+note = "frame-900 IWRAM dump == ROM 0x08032E54..0x08032F68"
+
+[[code_copy]]
+runtime_start = 0x03000324
+source_start = 0x080336AC
+size = 0x000000A4
+name = "iwram_arm_c"
+note = "frame-900 IWRAM dump == ROM 0x080336AC..0x08033750; no entry observed yet"
+
+[[extra_func]]
+addr = 0x03000030
+source_addr = 0x08033000
+mode = "arm"
+note = "self-heal miss, bridged x6920 in a 2400-frame menu-masher run"
+
+[[extra_func]]
+addr = 0x03000210
+source_addr = 0x08032E54
+mode = "arm"
+note = "self-heal miss, bridged x2281 in a 2400-frame menu-masher run"

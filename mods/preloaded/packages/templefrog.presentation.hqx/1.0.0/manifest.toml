@@ -1,0 +1,43 @@
+format_version = 1
+id = "templefrog.presentation.hqx"
+version = "1.0.0"
+name = "Pixel Smoothing (HQx)"
+author = "TempleFrog"
+description = "Smooths pixel-art edges with the HQx upscalers (gbarecomp's replaceable hqx library). Presentation only: game state and saves are unaffected."
+license = "MIT"
+resolver = "declarative"
+save_compatibility = "shared"
+
+[[target]]
+game_id = "frogger-adventures-temple-of-the-frog-us"
+rom_sha1 = "7b4c27009198df18555e63fb5dcad223eaf09815"
+
+[[feature]]
+id = "hqx"
+name = "Pixel Smoothing"
+description = "Upscale the 240x160 picture with edge-aware HQx smoothing before the window scaler."
+group = "Display"
+default_enabled = false
+
+[[option]]
+feature = "hqx"
+id = "scale"
+label = "Filter"
+type = "choice"
+default = "hq2x"
+
+[[option.choice]]
+value = "hq2x"
+label = "HQ2x"
+
+[[option.choice]]
+value = "hq3x"
+label = "HQ3x"
+
+[[option.choice]]
+value = "hq4x"
+label = "HQ4x"
+
+[[plugin]]
+feature = "hqx"
+id = "templefrog.presentation.hqx"

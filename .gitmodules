@@ -1,0 +1,8 @@
+[submodule "gbarecomp"]
+	path = gbarecomp
+	url = https://github.com/devall96/gbarecomp.git
+	branch = templefrog/presentation
+[submodule "recomp-ui"]
+	path = recomp-ui
+	url = https://github.com/devall96/recomp-ui.git
+	branch = templefrog/theme-spec
