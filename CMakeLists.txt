@@ -32,7 +32,7 @@ if(NOT GAME_GENERATED_SOURCES)
     message(FATAL_ERROR "No generated sources. Run tools/regen.ps1 with your ROM first.")
 endif()
 
-add_executable(TempleFrog src/main.cpp src/gax_hq.cpp src/game_policy.cpp ${GAME_GENERATED_SOURCES})
+add_executable(TempleFrog src/main.cpp src/gax_hq.cpp src/game_policy.cpp src/launch_checks.cpp ${GAME_GENERATED_SOURCES})
 
 set(GAME_RECOMPILED_SOURCES ${GAME_GENERATED_SOURCES})
 list(FILTER GAME_RECOMPILED_SOURCES INCLUDE REGEX "/recompiled_[0-9]+\\.cpp$")

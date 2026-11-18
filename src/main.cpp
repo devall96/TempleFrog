@@ -7,6 +7,7 @@
 
 #include "gax_hq.h"
 #include "game_policy.h"
+#include "launch_checks.h"
 #include "runtime.h"
 
 #if defined(GBAGAME_RECOMP_UI)
@@ -90,6 +91,14 @@ int main(int argc, char** argv) {
         }
     }
 
+    std::string exe_dir = ".";
+    {
+        std::error_code ec;
+        const std::filesystem::path exe = std::filesystem::absolute(argv[0], ec);
+        if (!ec && exe.has_parent_path()) exe_dir = exe.parent_path().string();
+    }
+    templefrog_start_log(exe_dir);
+
     gbarecomp::RunOptions opts;
     opts.builtin_game_name = "Frogger's Adventures: Temple of the Frog";
     opts.builtin_rom_sha1 = "7b4c27009198df18555e63fb5dcad223eaf09815";
@@ -171,8 +180,11 @@ int main(int argc, char** argv) {
     // Launcher art from the player's own ROM (first launch only; no-op once made).
     templefrog_ensure_boxart();
     std::vector<std::string> args(argv, argv + argc);
-    const std::string game_rom = take_game_arg(args);
-    if (!game_rom.empty()) prepare_game_start(args, argv[0]);
+    std::string game_rom = take_game_arg(args);
+    if (!game_rom.empty()) {
+        prepare_game_start(args, argv[0]);
+        if (const int code = templefrog_check_game(game_rom, exe_dir)) return code;
+    }
     if (game_launcher_preboot(args, opts)) return 0;  // user closed the launcher
     if (!game_rom.empty()) args.insert(args.end(), {"--rom", game_rom});
     use_save_folder(args);
@@ -182,9 +194,10 @@ int main(int argc, char** argv) {
     return gbarecomp::run_game(static_cast<int>(av.size()), av.data(), opts);
 #else
     std::vector<std::string> args(argv, argv + argc);
-    const std::string game_rom = take_game_arg(args);
+    std::string game_rom = take_game_arg(args);
     if (!game_rom.empty()) {
         prepare_game_start(args, argv[0]);
+        if (const int code = templefrog_check_game(game_rom, exe_dir)) return code;
         args.insert(args.end(), {"--rom", game_rom});
     }
     use_save_folder(args);
