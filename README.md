@@ -141,3 +141,7 @@ The Linux release is `tools/release_appimage.sh x.y.z`: it builds in an AlmaLinu
 ## License
 
 TempleFrog's own code is [MIT](LICENSE). It's built on gbarecomp, which is under the [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0), so **TempleFrog as a whole, including every release, is for non-commercial use only.**
+
+---
+
+<p align="center"><a href="https://ko-fi.com/devall96"><img src="https://img.shields.io/badge/Support_me_on-Ko--fi-FF5E5B?logo=ko-fi&logoColor=white&style=for-the-badge" alt="Support me on Ko-fi"></a></p>
