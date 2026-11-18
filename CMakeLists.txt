@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(TempleFrog VERSION 0.1.0 LANGUAGES C CXX)
+project(TempleFrog VERSION 0.1.1 LANGUAGES C CXX)
 set(GBARECOMP_GAME_VERSION "${PROJECT_VERSION}" CACHE STRING "Player-visible game build version" FORCE)
 
 set(CMAKE_C_STANDARD 11)

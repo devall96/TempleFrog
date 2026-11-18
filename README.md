@@ -70,7 +70,7 @@ The game graphics in these screenshots come from a legally obtained copy of the 
 
 ## Getting started
 
-1. Download **[TempleFrog-0.1.0-windows-x64.zip](https://github.com/devall96/TempleFrog/releases/latest)** and unzip it anywhere you can write to (not *Program Files*).
+1. Download **[TempleFrog-0.1.1-windows-x64.zip](https://github.com/devall96/TempleFrog/releases/latest)** and unzip it anywhere you can write to (not *Program Files*).
 2. Put your ROM in `roms\frog_us.gba` and your BIOS in `bios\gba_bios.bin`, or start `TempleFrog.exe` and pick them in the launcher (Play → *Browse For ROM*, Settings → *BIOS*).
 3. Run **TempleFrog.exe** and press **PLAY**.
 
