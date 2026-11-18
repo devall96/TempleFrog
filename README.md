@@ -74,7 +74,7 @@ The game graphics in these screenshots come from a legally obtained copy of the 
 2. Put your ROM in `roms\frog_us.gba` and your BIOS in `bios\gba_bios.bin`, or start `TempleFrog.exe` and pick them in the launcher (Play → *Browse For ROM*, Settings → *BIOS*).
 3. Run **TempleFrog.exe** and press **PLAY**.
 
-**With [RecompLauncher](https://recomplauncher.com):** install TempleFrog there and pick your ROM on its setup screen; it checks the ROM, starts the game straight away and has TempleFrog's settings on the game's page. The BIOS still goes in `bios\gba_bios.bin` (or TempleFrog asks for it on the first start). Scripts and shortcuts can do the same with `TempleFrog.exe --game <your ROM>`.
+**With [RecompLauncher](https://recomplauncher.com):** install TempleFrog there and pick your ROM (the .gba, or a .zip with it inside) on its setup screen; it checks the ROM, starts the game straight away and has TempleFrog's settings on the game's page. The BIOS still goes in `bios\gba_bios.bin` (or TempleFrog asks for it on the first start). Scripts and shortcuts can do the same with `TempleFrog.exe --game <your ROM>`.
 
 In game, **Esc** opens the menu (on a controller: click a stick, or Select + Start). The launcher checks your files against these:
 

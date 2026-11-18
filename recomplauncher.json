@@ -5,189 +5,539 @@
   "repo": "devall96/TempleFrog",
   "game": {
     "kind": "iso",
-    "label": "Your ROM of Frogger's Adventures: Temple of the Frog (USA), a .gba file. TempleFrog also needs your own Game Boy Advance BIOS: put it in bios\\gba_bios.bin in the game's folder, or pick it when TempleFrog asks.",
+    "label": "Your ROM of Frogger's Adventures: Temple of the Frog (USA): the .gba file, or a .zip with it inside. TempleFrog also needs your own Game Boy Advance BIOS: put it in bios\\gba_bios.bin in the game's folder, or pick it when TempleFrog asks.",
     "dumps": [
-      { "name": "USA (No-Intro)", "size": 4194304, "crc32": "2eb9eee6" }
+      {
+        "name": "USA (No-Intro)",
+        "size": 4194304,
+        "crc32": "2eb9eee6"
+      }
     ]
   },
   "start": {
-    "program": ["TempleFrog.exe"],
-    "args": ["--game", "{game}"]
+    "program": [
+      "TempleFrog.exe"
+    ],
+    "args": [
+      "--game",
+      "{game}"
+    ],
+    "env": {
+      "GBARECOMP_UI_FAMILY_DEFAULT": "{pad}"
+    }
   },
-  "saves": ["{install}/saves"],
+  "saves": [
+    "{install}/saves"
+  ],
   "config": [
     {
       "id": "main",
       "format": "ini",
-      "file": [{ "path": "{install}/config.ini" }]
+      "file": [
+        {
+          "path": "{install}/config.ini"
+        }
+      ]
     },
     {
       "id": "templefrog",
       "format": "ini",
-      "file": [{ "path": "{install}/templefrog.ini" }]
+      "file": [
+        {
+          "path": "{install}/templefrog.ini"
+        }
+      ]
     }
   ],
   "folders": {
-    "saves": [{ "path": "{install}/saves" }]
+    "saves": [
+      {
+        "path": "{install}/saves"
+      }
+    ],
+    "logs": [
+      {
+        "path": "{install}/logs"
+      }
+    ],
+    "game": [
+      {
+        "path": "{install}"
+      }
+    ]
+  },
+  "exit_codes": {
+    "20": "TempleFrog couldn't open your ROM. Pick it again on the game's page.",
+    "21": "That .zip has no .gba ROM inside. Pick the .gba file, or a .zip that holds it.",
+    "22": "This is the European release of the game. TempleFrog needs the USA one (game code AFRE).",
+    "23": "This file isn't Frogger's Adventures: Temple of the Frog (USA). Pick the USA .gba ROM.",
+    "24": "TempleFrog needs your own Game Boy Advance BIOS. Open the game folder (the Game folder button), put it in the bios folder as gba_bios.bin, then press Play again."
   },
   "settings": [
     {
-      "id": "window", "label": "Window", "group": "Display",
+      "id": "window",
+      "label": "Window",
+      "group": "Display",
       "help": "Play in a window, in a borderless fullscreen window, or in exclusive fullscreen.",
       "choices": [
-        { "label": "Windowed", "set": { "Launcher/fullscreen": "0" } },
-        { "label": "Borderless", "set": { "Launcher/fullscreen": "1" } },
-        { "label": "Exclusive", "set": { "Launcher/fullscreen": "2" } }
+        {
+          "label": "Windowed",
+          "set": {
+            "Launcher/fullscreen": "0"
+          }
+        },
+        {
+          "label": "Borderless",
+          "set": {
+            "Launcher/fullscreen": "1"
+          }
+        },
+        {
+          "label": "Exclusive",
+          "set": {
+            "Launcher/fullscreen": "2"
+          }
+        }
       ],
-      "defaults": { "Launcher/fullscreen": "0" }
+      "defaults": {
+        "Launcher/fullscreen": "0"
+      }
     },
     {
-      "id": "window_size", "label": "Window size", "group": "Display",
+      "id": "window_size",
+      "label": "Window size",
+      "group": "Display",
       "help": "The window's size in whole multiples of the GBA's 240x160 picture. You can also drag the window to any size.",
       "choices": [
-        { "label": "2x", "set": { "Launcher/scale": "2" } },
-        { "label": "3x", "set": { "Launcher/scale": "3" } },
-        { "label": "4x", "set": { "Launcher/scale": "4" } },
-        { "label": "5x", "set": { "Launcher/scale": "5" } },
-        { "label": "6x", "set": { "Launcher/scale": "6" } }
+        {
+          "label": "2x",
+          "set": {
+            "Launcher/scale": "2"
+          }
+        },
+        {
+          "label": "3x",
+          "set": {
+            "Launcher/scale": "3"
+          }
+        },
+        {
+          "label": "4x",
+          "set": {
+            "Launcher/scale": "4"
+          }
+        },
+        {
+          "label": "5x",
+          "set": {
+            "Launcher/scale": "5"
+          }
+        },
+        {
+          "label": "6x",
+          "set": {
+            "Launcher/scale": "6"
+          }
+        }
       ],
-      "defaults": { "Launcher/scale": "3", "Launcher/fullscreen": "0" },
-      "when": { "Launcher/fullscreen": "0" }
+      "defaults": {
+        "Launcher/scale": "3",
+        "Launcher/fullscreen": "0"
+      },
+      "when": {
+        "Launcher/fullscreen": "0"
+      }
     },
     {
-      "id": "filter", "label": "Scaling filter", "group": "Display",
+      "id": "filter",
+      "label": "Scaling filter",
+      "group": "Display",
       "help": "Nearest keeps pixels crisp. Sharp bilinear keeps them crisp and even at any size, best for fullscreen. Linear smooths the whole picture.",
       "choices": [
-        { "label": "Nearest", "set": { "Launcher/linear_filter": "0", "Launcher/sharp_filter": "0" } },
-        { "label": "Sharp bilinear", "set": { "Launcher/linear_filter": "0", "Launcher/sharp_filter": "1" } },
-        { "label": "Linear", "set": { "Launcher/linear_filter": "1", "Launcher/sharp_filter": "0" } }
+        {
+          "label": "Nearest",
+          "set": {
+            "Launcher/linear_filter": "0",
+            "Launcher/sharp_filter": "0"
+          }
+        },
+        {
+          "label": "Sharp bilinear",
+          "set": {
+            "Launcher/linear_filter": "0",
+            "Launcher/sharp_filter": "1"
+          }
+        },
+        {
+          "label": "Linear",
+          "set": {
+            "Launcher/linear_filter": "1",
+            "Launcher/sharp_filter": "0"
+          }
+        }
       ],
-      "defaults": { "Launcher/linear_filter": "0", "Launcher/sharp_filter": "0" }
+      "defaults": {
+        "Launcher/linear_filter": "0",
+        "Launcher/sharp_filter": "0"
+      }
     },
     {
-      "id": "integer_scale", "label": "Integer scaling", "group": "Display",
+      "id": "integer_scale",
+      "label": "Integer scaling",
+      "group": "Display",
       "help": "Keeps every game pixel exactly the same size; the rest of the screen gets side bars.",
       "choices": [
-        { "label": "Off", "set": { "Launcher/integer_scale": "0" } },
-        { "label": "On", "set": { "Launcher/integer_scale": "1" } }
+        {
+          "label": "Off",
+          "set": {
+            "Launcher/integer_scale": "0"
+          }
+        },
+        {
+          "label": "On",
+          "set": {
+            "Launcher/integer_scale": "1"
+          }
+        }
       ],
-      "defaults": { "Launcher/integer_scale": "0" }
+      "defaults": {
+        "Launcher/integer_scale": "0"
+      }
     },
     {
-      "id": "side_bars", "label": "Side bars", "group": "Display",
+      "id": "side_bars",
+      "label": "Side bars",
+      "group": "Display",
       "help": "What fills the space around the picture: a soft blurred glow of the game, or plain black.",
       "choices": [
-        { "label": "Blurred", "set": { "Launcher/ambient_bars": "1" } },
-        { "label": "Black", "set": { "Launcher/ambient_bars": "0" } }
+        {
+          "label": "Blurred",
+          "set": {
+            "Launcher/ambient_bars": "1"
+          }
+        },
+        {
+          "label": "Black",
+          "set": {
+            "Launcher/ambient_bars": "0"
+          }
+        }
       ],
-      "defaults": { "Launcher/ambient_bars": "1" }
+      "defaults": {
+        "Launcher/ambient_bars": "1"
+      }
     },
     {
-      "id": "colour", "label": "Colour correction", "group": "Display",
+      "id": "colour",
+      "label": "Colour correction",
+      "group": "Display",
       "help": "GBA games were drawn bright for the original dark screen. Pick a screen to see the colours as intended; Vivid shows them as stored.",
       "choices": [
-        { "label": "Vivid", "set": { "Launcher/screen": "raw" } },
-        { "label": "GBA", "set": { "Launcher/screen": "unlit" } },
-        { "label": "GBA frontlit", "set": { "Launcher/screen": "frontlit" } },
-        { "label": "GBA SP", "set": { "Launcher/screen": "backlit" } },
-        { "label": "Classic", "set": { "Launcher/screen": "classic" } }
+        {
+          "label": "Vivid",
+          "set": {
+            "Launcher/screen": "raw"
+          }
+        },
+        {
+          "label": "GBA",
+          "set": {
+            "Launcher/screen": "unlit"
+          }
+        },
+        {
+          "label": "GBA frontlit",
+          "set": {
+            "Launcher/screen": "frontlit"
+          }
+        },
+        {
+          "label": "GBA SP",
+          "set": {
+            "Launcher/screen": "backlit"
+          }
+        },
+        {
+          "label": "Classic",
+          "set": {
+            "Launcher/screen": "classic"
+          }
+        }
       ],
-      "defaults": { "Launcher/screen": "raw" }
+      "defaults": {
+        "Launcher/screen": "raw"
+      }
     },
     {
-      "id": "scanlines", "label": "Scanlines", "group": "Display",
+      "id": "scanlines",
+      "label": "Scanlines",
+      "group": "Display",
       "help": "Darkens every other line for a retro look, at 2x or larger.",
       "choices": [
-        { "label": "Off", "set": { "Launcher/scanlines": "0" } },
-        { "label": "On", "set": { "Launcher/scanlines": "1" } }
+        {
+          "label": "Off",
+          "set": {
+            "Launcher/scanlines": "0"
+          }
+        },
+        {
+          "label": "On",
+          "set": {
+            "Launcher/scanlines": "1"
+          }
+        }
       ],
-      "defaults": { "Launcher/scanlines": "0" }
+      "defaults": {
+        "Launcher/scanlines": "0"
+      }
     },
     {
-      "id": "lcd_grid", "label": "LCD grid", "group": "Display",
+      "id": "lcd_grid",
+      "label": "LCD grid",
+      "group": "Display",
       "help": "Thin dark gaps between pixels like the GBA's screen, at 3x or larger.",
       "choices": [
-        { "label": "Off", "set": { "Launcher/lcd_grid": "0" } },
-        { "label": "On", "set": { "Launcher/lcd_grid": "1" } }
+        {
+          "label": "Off",
+          "set": {
+            "Launcher/lcd_grid": "0"
+          }
+        },
+        {
+          "label": "On",
+          "set": {
+            "Launcher/lcd_grid": "1"
+          }
+        }
       ],
-      "defaults": { "Launcher/lcd_grid": "0" }
+      "defaults": {
+        "Launcher/lcd_grid": "0"
+      }
     },
     {
-      "id": "enhanced_audio", "label": "Enhanced audio", "group": "Sound",
+      "id": "enhanced_audio",
+      "label": "Enhanced audio",
+      "group": "Sound",
       "help": "A high-precision mix of the game's music and effects, without the GBA's hiss and crunch. Off plays the original sound.",
       "choices": [
-        { "label": "On", "set": { "Audio/enhanced": "1" } },
-        { "label": "Off", "set": { "Audio/enhanced": "0" } }
+        {
+          "label": "On",
+          "set": {
+            "Audio/enhanced": "1"
+          }
+        },
+        {
+          "label": "Off",
+          "set": {
+            "Audio/enhanced": "0"
+          }
+        }
       ],
-      "defaults": { "Audio/enhanced": "1" }
+      "defaults": {
+        "Audio/enhanced": "1"
+      }
     },
     {
-      "id": "volume", "label": "Volume", "group": "Sound",
+      "id": "volume",
+      "label": "Volume",
+      "group": "Sound",
       "help": "The game's volume.",
-      "slider": { "key": "Launcher/volume", "min": 0, "max": 100, "step": 5, "format": "%g" },
-      "defaults": { "Launcher/volume": "100" }
+      "slider": {
+        "key": "Launcher/volume",
+        "min": 0,
+        "max": 100,
+        "step": 5,
+        "format": "%g"
+      },
+      "defaults": {
+        "Launcher/volume": "100"
+      }
     },
     {
-      "id": "sample_rate", "label": "Output rate", "group": "Sound", "advanced": true,
+      "id": "sample_rate",
+      "label": "Output rate",
+      "group": "Sound",
+      "advanced": true,
       "help": "The sound output rate. 48 kHz suits most PCs.",
       "choices": [
-        { "label": "48 kHz", "set": { "Launcher/audio_freq": "48000" } },
-        { "label": "44.1 kHz", "set": { "Launcher/audio_freq": "44100" } },
-        { "label": "32 kHz", "set": { "Launcher/audio_freq": "32000" } }
+        {
+          "label": "48 kHz",
+          "set": {
+            "Launcher/audio_freq": "48000"
+          }
+        },
+        {
+          "label": "44.1 kHz",
+          "set": {
+            "Launcher/audio_freq": "44100"
+          }
+        },
+        {
+          "label": "32 kHz",
+          "set": {
+            "Launcher/audio_freq": "32000"
+          }
+        }
       ],
-      "defaults": { "Launcher/audio_freq": "48000" }
+      "defaults": {
+        "Launcher/audio_freq": "48000"
+      }
     },
     {
-      "id": "fast_boot", "label": "Fast boot", "group": "Game",
+      "id": "fast_boot",
+      "label": "Fast boot",
+      "group": "Game",
       "help": "Skips the start-up logos and goes straight to the title screen.",
       "choices": [
-        { "label": "On", "set": { "Launcher/fast_boot": "1" } },
-        { "label": "Off", "set": { "Launcher/fast_boot": "0" } }
+        {
+          "label": "On",
+          "set": {
+            "Launcher/fast_boot": "1"
+          }
+        },
+        {
+          "label": "Off",
+          "set": {
+            "Launcher/fast_boot": "0"
+          }
+        }
       ],
-      "defaults": { "Launcher/fast_boot": "1" }
+      "defaults": {
+        "Launcher/fast_boot": "1"
+      }
     },
     {
-      "id": "pause_unfocused", "label": "Pause when unfocused", "group": "Game",
+      "id": "pause_unfocused",
+      "label": "Pause when unfocused",
+      "group": "Game",
       "help": "Pauses the game while you're in another window.",
       "choices": [
-        { "label": "On", "set": { "Launcher/pause_unfocused": "1" } },
-        { "label": "Off", "set": { "Launcher/pause_unfocused": "0" } }
+        {
+          "label": "On",
+          "set": {
+            "Launcher/pause_unfocused": "1"
+          }
+        },
+        {
+          "label": "Off",
+          "set": {
+            "Launcher/pause_unfocused": "0"
+          }
+        }
       ],
-      "defaults": { "Launcher/pause_unfocused": "1" }
+      "defaults": {
+        "Launcher/pause_unfocused": "1"
+      }
     },
     {
-      "id": "language", "label": "Language", "group": "Game", "in": "templefrog",
+      "id": "language",
+      "label": "Language",
+      "group": "Game",
+      "in": "templefrog",
       "help": "The game asks for a language each time you press Start; pick one here and TempleFrog answers for you. The menus follow it too.",
       "choices": [
-        { "label": "Ask every time", "set": { "TempleFrog/language": "0" } },
-        { "label": "English", "set": { "TempleFrog/language": "1" } },
-        { "label": "Français", "set": { "TempleFrog/language": "2" } },
-        { "label": "Deutsch", "set": { "TempleFrog/language": "3" } },
-        { "label": "Español", "set": { "TempleFrog/language": "4" } },
-        { "label": "Italiano", "set": { "TempleFrog/language": "5" } }
+        {
+          "label": "Ask every time",
+          "set": {
+            "TempleFrog/language": "0"
+          }
+        },
+        {
+          "label": "English",
+          "set": {
+            "TempleFrog/language": "1"
+          }
+        },
+        {
+          "label": "Français",
+          "set": {
+            "TempleFrog/language": "2"
+          }
+        },
+        {
+          "label": "Deutsch",
+          "set": {
+            "TempleFrog/language": "3"
+          }
+        },
+        {
+          "label": "Español",
+          "set": {
+            "TempleFrog/language": "4"
+          }
+        },
+        {
+          "label": "Italiano",
+          "set": {
+            "TempleFrog/language": "5"
+          }
+        }
       ],
-      "defaults": { "TempleFrog/language": "0" }
+      "defaults": {
+        "TempleFrog/language": "0"
+      }
     },
     {
-      "id": "rumble", "label": "Rumble", "group": "Game", "in": "templefrog",
+      "id": "rumble",
+      "label": "Rumble",
+      "group": "Game",
+      "in": "templefrog",
       "help": "Controller rumble when Frogger loses a life, gets a 1-up, or picks up an element or a coin.",
       "choices": [
-        { "label": "Off", "set": { "TempleFrog/rumble": "0" } },
-        { "label": "On", "set": { "TempleFrog/rumble": "1" } }
+        {
+          "label": "Off",
+          "set": {
+            "TempleFrog/rumble": "0"
+          }
+        },
+        {
+          "label": "On",
+          "set": {
+            "TempleFrog/rumble": "1"
+          }
+        }
       ],
-      "defaults": { "TempleFrog/rumble": "0" }
+      "defaults": {
+        "TempleFrog/rumble": "0"
+      }
     },
     {
-      "id": "speedrun_timer", "label": "Speedrun timer", "group": "Game", "in": "templefrog",
+      "id": "speedrun_timer",
+      "label": "Speedrun timer",
+      "group": "Game",
+      "in": "templefrog",
       "help": "Shows the level time, the total time in levels and the last split, counted in game frames.",
       "choices": [
-        { "label": "Off", "set": { "TempleFrog/speedrun_timer": "0" } },
-        { "label": "On", "set": { "TempleFrog/speedrun_timer": "1" } }
+        {
+          "label": "Off",
+          "set": {
+            "TempleFrog/speedrun_timer": "0"
+          }
+        },
+        {
+          "label": "On",
+          "set": {
+            "TempleFrog/speedrun_timer": "1"
+          }
+        }
       ],
-      "defaults": { "TempleFrog/speedrun_timer": "0" }
+      "defaults": {
+        "TempleFrog/speedrun_timer": "0"
+      }
     }
   ],
   "actions": [
-    { "id": "saves", "label": "Saves", "help": "Your save and save states.", "open": "saves" }
+    {
+      "id": "saves",
+      "label": "Saves",
+      "help": "Your save and save states.",
+      "open": "saves"
+    },
+    {
+      "id": "game_folder",
+      "label": "Game folder",
+      "help": "TempleFrog's folder: put your BIOS in its bios folder as gba_bios.bin.",
+      "open": "game"
+    }
   ]
 }

@@ -102,5 +102,10 @@ Quick wins first: language picker, fast boot, rumble. Then the flagships: widesc
 
 ## Distribution
 
+- [x] RecompLauncher support (recomplauncher.json in every release): Easy Setup from the USA ROM (.gba or .zip,
+      verified against No-Intro), 16 settings, saves and logs folders, exit-code messages, prompt style from {pad}.
+- [ ] Ask RecompLauncher for BIOS inputs (today the player places bios\gba_bios.bin; Big Picture exits with code 24).
+- [ ] Zipped ROMs in TempleFrog's own launcher too (its picker takes .gba only; --game handles .zip).
+
 - [ ] Steam Deck, Linux and Android builds (gbarecomp supports them; keep platform code behind #ifdefs).
 - [ ] Auto-updater (like Savage Wind's).
