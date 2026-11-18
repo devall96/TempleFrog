@@ -17,7 +17,8 @@
 namespace {
 
 void print_usage() {
-    std::printf("TempleFrog [--no-launcher] [--bios <path>] [--rom <path>] [game.toml]\n");
+    std::printf("TempleFrog [--no-launcher] [--game <rom>] [--bios <path>] [--rom <path>] [game.toml]\n"
+                "  --game <rom>  start straight into the game with this ROM, using the saved settings\n");
 }
 
 }  // namespace
@@ -33,6 +34,51 @@ static void use_save_folder(std::vector<std::string>& args) {
     std::error_code ec;
     std::filesystem::create_directories("saves/states", ec);
     args.insert(args.begin() + (args.empty() ? 0 : 1), {"--state-dir", "saves/states"});
+}
+
+// --game <path> (or --game=<path>): start straight into the game with this ROM,
+// for launchers (RecompLauncher), scripts and shortcuts. Removed from args and
+// returned; empty when not given, which leaves every other start as it was.
+static std::string take_game_arg(std::vector<std::string>& args) {
+    for (size_t i = 1; i < args.size(); ++i) {
+        if (args[i] == "--game" && i + 1 < args.size()) {
+            std::string path = args[i + 1];
+            args.erase(args.begin() + static_cast<std::ptrdiff_t>(i),
+                       args.begin() + static_cast<std::ptrdiff_t>(i + 2));
+            return path;
+        }
+        if (args[i].rfind("--game=", 0) == 0) {
+            std::string path = args[i].substr(7);
+            args.erase(args.begin() + static_cast<std::ptrdiff_t>(i));
+            return path;
+        }
+    }
+    return {};
+}
+
+static bool has_arg(const std::vector<std::string>& args, const char* prefix) {
+    for (size_t i = 1; i < args.size(); ++i)
+        if (args[i].rfind(prefix, 0) == 0) return true;
+    return false;
+}
+
+// With --game: skip TempleFrog's own launcher screen the usual way
+// (--no-launcher still applies the player's saved settings), run from the
+// program's folder when the working directory isn't it, and open full screen
+// when RecompLauncher starts the game from its Big Picture mode.
+static void prepare_game_start(std::vector<std::string>& args, const char* argv0) {
+    std::error_code ec;
+    if (!std::filesystem::exists("game.toml", ec) && argv0 && argv0[0]) {
+        const std::filesystem::path dir = std::filesystem::absolute(argv0, ec).parent_path();
+        if (!ec && std::filesystem::exists(dir / "game.toml", ec))
+            std::filesystem::current_path(dir, ec);
+    }
+    if (!has_arg(args, "--launcher") && !has_arg(args, "--no-launcher"))
+        args.insert(args.begin() + 1, "--no-launcher");
+    const char* mode = std::getenv("RECOMPLAUNCHER_MODE");
+    if (mode && std::strcmp(mode, "bigpicture") == 0 && !has_arg(args, "--fullscreen") &&
+        !has_arg(args, "--window"))
+        args.insert(args.begin() + 1, "--fullscreen=1");
 }
 
 int main(int argc, char** argv) {
@@ -125,7 +171,10 @@ int main(int argc, char** argv) {
     // Launcher art from the player's own ROM (first launch only; no-op once made).
     templefrog_ensure_boxart();
     std::vector<std::string> args(argv, argv + argc);
+    const std::string game_rom = take_game_arg(args);
+    if (!game_rom.empty()) prepare_game_start(args, argv[0]);
     if (game_launcher_preboot(args, opts)) return 0;  // user closed the launcher
+    if (!game_rom.empty()) args.insert(args.end(), {"--rom", game_rom});
     use_save_folder(args);
     std::vector<char*> av;
     av.reserve(args.size());
@@ -133,6 +182,11 @@ int main(int argc, char** argv) {
     return gbarecomp::run_game(static_cast<int>(av.size()), av.data(), opts);
 #else
     std::vector<std::string> args(argv, argv + argc);
+    const std::string game_rom = take_game_arg(args);
+    if (!game_rom.empty()) {
+        prepare_game_start(args, argv[0]);
+        args.insert(args.end(), {"--rom", game_rom});
+    }
     use_save_folder(args);
     std::vector<char*> av;
     av.reserve(args.size());

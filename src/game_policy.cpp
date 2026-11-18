@@ -80,14 +80,24 @@ void save_settings() {
 void load_settings() {
     std::ifstream in(g_ini_path);
     std::string line;
+    // "key=value" or "key = value" (other tools, such as RecompLauncher, may
+    // write the spaced form).
+    auto trim = [](std::string s) {
+        const size_t a = s.find_first_not_of(" \t\r");
+        const size_t b = s.find_last_not_of(" \t\r");
+        return a == std::string::npos ? std::string() : s.substr(a, b - a + 1);
+    };
     while (std::getline(in, line)) {
-        if (line.rfind("language=", 0) == 0) {
-            const int v = std::atoi(line.c_str() + 9);
+        const size_t eq = line.find('=');
+        if (eq == std::string::npos) continue;
+        const std::string key = trim(line.substr(0, eq));
+        const int v = std::atoi(trim(line.substr(eq + 1)).c_str());
+        if (key == "language") {
             if (v >= 0 && v <= 5) g_language.store(v);
-        } else if (line.rfind("rumble=", 0) == 0) {
-            g_rumble.store(std::atoi(line.c_str() + 7) != 0 ? 1 : 0);
-        } else if (line.rfind("speedrun_timer=", 0) == 0) {
-            g_timer.store(std::atoi(line.c_str() + 15) != 0 ? 1 : 0);
+        } else if (key == "rumble") {
+            g_rumble.store(v != 0 ? 1 : 0);
+        } else if (key == "speedrun_timer") {
+            g_timer.store(v != 0 ? 1 : 0);
         }
     }
 }
