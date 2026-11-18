@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=TempleFrog
+Comment=Frogger's Adventures: Temple of the Frog, recompiled for PC (bring your own ROM and BIOS)
+Exec=TempleFrog
+Icon=templefrog
+Terminal=false
+Categories=Game;ActionGame;
+StartupWMClass=TempleFrog

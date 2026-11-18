@@ -12,6 +12,13 @@
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#else
+#include <chrono>
+#include <csignal>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <thread>
+#include <unistd.h>
 #endif
 
 namespace fs = std::filesystem;
@@ -119,6 +126,8 @@ bool rgb_to_tga(const Rgb& img, const fs::path& tga, int scale) {
     return bool(o);
 }
 
+// The runtime started as a hidden helper: it renders the title screen to a BMP.
+// The env vars keep it from writing diagnostics or recursing into this function.
 #if defined(_WIN32)
 fs::path exe_path() {
     std::wstring buf(32768, L'\0');
@@ -129,14 +138,16 @@ fs::path exe_path() {
 
 std::wstring quote(const fs::path& p) { return L"\"" + p.wstring() + L"\""; }
 
-bool run_hidden(const std::wstring& cmd, const fs::path& cwd, DWORD timeout_ms) {
+bool run_hidden(const fs::path& exe, const std::vector<fs::path>& args, const fs::path& cwd,
+                unsigned timeout_ms) {
+    std::wstring cmd = quote(exe);
+    for (const auto& a : args) cmd += L" " + quote(a);
     STARTUPINFOW si{};
     si.cb = sizeof(si);
     PROCESS_INFORMATION pi{};
-    std::wstring mutable_cmd = cmd;
     SetEnvironmentVariableW(L"GBARECOMP_DIAGNOSTICS", L"0");
     SetEnvironmentVariableW(L"TEMPLEFROG_NO_BOXART", L"1");
-    const BOOL ok = CreateProcessW(nullptr, mutable_cmd.data(), nullptr, nullptr, FALSE,
+    const BOOL ok = CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE,
                                    CREATE_NO_WINDOW, nullptr, cwd.wstring().c_str(), &si, &pi);
     SetEnvironmentVariableW(L"GBARECOMP_DIAGNOSTICS", nullptr);
     SetEnvironmentVariableW(L"TEMPLEFROG_NO_BOXART", nullptr);
@@ -149,15 +160,58 @@ bool run_hidden(const std::wstring& cmd, const fs::path& cwd, DWORD timeout_ms) 
     CloseHandle(pi.hProcess);
     return done && code == 0;
 }
+#else
+fs::path exe_path() {
+    std::error_code ec;
+    return fs::read_symlink("/proc/self/exe", ec);
+}
+
+bool run_hidden(const fs::path& exe, const std::vector<fs::path>& args, const fs::path& cwd,
+                unsigned timeout_ms) {
+    std::vector<std::string> owned{exe.string()};
+    for (const auto& a : args) owned.push_back(a.string());
+    std::vector<char*> argv;
+    for (auto& a : owned) argv.push_back(a.data());
+    argv.push_back(nullptr);
+
+    const pid_t pid = fork();
+    if (pid < 0) return false;
+    if (pid == 0) {
+        setenv("GBARECOMP_DIAGNOSTICS", "0", 1);
+        setenv("TEMPLEFROG_NO_BOXART", "1", 1);
+        setenv("SDL_VIDEODRIVER", "dummy", 1);   // --no-window; never open a display
+        setenv("SDL_AUDIODRIVER", "dummy", 1);
+        if (const int null = open("/dev/null", O_RDWR); null >= 0) {
+            dup2(null, 0); dup2(null, 1); dup2(null, 2);
+            if (null > 2) close(null);
+        }
+        if (chdir(cwd.c_str()) != 0) _exit(127);
+        execv(owned[0].c_str(), argv.data());
+        _exit(127);
+    }
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
+    int status = 0;
+    for (;;) {
+        const pid_t r = waitpid(pid, &status, WNOHANG);
+        if (r == pid) return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+        if (r < 0) return false;
+        if (std::chrono::steady_clock::now() >= deadline) {
+            kill(pid, SIGKILL);
+            waitpid(pid, &status, 0);
+            return false;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+}
 #endif
 
 }  // namespace
 
 void templefrog_ensure_boxart() {
-#if defined(_WIN32)
     if (const char* e = std::getenv("TEMPLEFROG_NO_BOXART"); e && *e && *e != '0') return;
     std::error_code ec;
     const fs::path exe = exe_path();
+    if (exe.empty()) return;
     const fs::path dir = exe.parent_path();
     const fs::path art = dir / "assets" / "img" / "boxart.tga";
     const fs::path backdrop = dir / "assets" / "img" / "backdrop.tga";  // blurred launcher backdrop
@@ -191,11 +245,11 @@ void templefrog_ensure_boxart() {
     fs::remove(bmp, ec);
     fs::remove(scratch_save, ec);
 
-    const std::wstring cmd = quote(exe) + L" --no-window --frames " + std::to_wstring(kTitleFrame) +
-        L" --dump-bmp " + quote(bmp) + L" --rom " + quote(rom) + L" --bios " + quote(bios) +
-        L" --save-path " + quote(scratch_save) + L" " + quote(toml);
+    const std::vector<fs::path> args = {"--no-window", "--frames", std::to_string(kTitleFrame),
+                                        "--dump-bmp", bmp, "--rom", rom, "--bios", bios,
+                                        "--save-path", scratch_save, toml};
     Rgb title;
-    if (run_hidden(cmd, toml.parent_path(), 30000) && read_bmp(bmp, title)) {
+    if (run_hidden(exe, args, toml.parent_path(), 30000) && read_bmp(bmp, title)) {
         if (!fs::exists(art, ec) && rgb_to_tga(title, art, kArtScale))
             std::fprintf(stderr, "[templefrog] box art created from your ROM's title screen: %s\n",
                          art.string().c_str());
@@ -230,5 +284,4 @@ void templefrog_ensure_boxart() {
     }
     fs::remove(bmp, ec);
     fs::remove(scratch_save, ec);
-#endif
 }

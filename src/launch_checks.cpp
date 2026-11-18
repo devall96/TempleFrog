@@ -145,9 +145,9 @@ int templefrog_check_game(std::string& rom_path, const std::string& exe_dir) {
 
     const char* mode = std::getenv("RECOMPLAUNCHER_MODE");
     if (mode && std::strcmp(mode, "bigpicture") == 0 && !bios_available(exe_dir))
-        return fail(kExitBiosMissing, "no GBA BIOS: put yours in bios\\gba_bios.bin in the game's folder");
+        return fail(kExitBiosMissing, "no GBA BIOS: put yours in bios/gba_bios.bin in the game's folder");
     if (!bios_available(exe_dir))
         std::fprintf(stderr, "[templefrog] no GBA BIOS yet: TempleFrog will ask for yours "
-                             "(or put it in bios\\gba_bios.bin)\n");
+                             "(or put it in bios/gba_bios.bin)\n");
     return 0;
 }

@@ -47,3 +47,8 @@ mods/state.toml
 
 # Local tool settings
 .claude/
+
+# Linux AppImage packaging
+build-appimage/
+tools/appimagetool*.AppImage
+build-appimage-el8/

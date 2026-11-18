@@ -90,7 +90,7 @@
 
   <div class="eyebrow">STATIC RECOMPILATION · VERSION 0.1.1</div>
   <h1>Temple of the Frog, on your PC</h1>
-  <p class="lead">TempleFrog turns the Game Boy Advance classic into a native Windows program, recompiled ahead of time from your own copy of the game. Then it adds what a PC port should have: a launcher, cleaner high-precision sound, sharp filters, save states, rewind, fast boot, controller support with matching button prompts, and the whole interface in the game's five languages.</p>
+  <p class="lead">TempleFrog turns the Game Boy Advance classic into a native program for Windows, Linux and the Steam Deck, recompiled ahead of time from your own copy of the game. Then it adds what a PC port should have: a launcher, cleaner high-precision sound, sharp filters, save states, rewind, fast boot, controller support with matching button prompts, and the whole interface in the game's five languages.</p>
 
   <div class="downloads">
     <a class="dl primary" href="https://github.com/devall96/TempleFrog/releases/download/v0.1.1/TempleFrog-0.1.1-windows-x64.zip">
@@ -98,13 +98,18 @@
       <div class="file">TempleFrog-0.1.1-windows-x64.zip</div>
       <div class="meta">About 14 MB · unzip and run, no installer</div>
     </a>
+    <a class="dl primary" href="https://github.com/devall96/TempleFrog/releases/download/v0.1.1/TempleFrog-0.1.1-linux-x86_64.AppImage">
+      <div class="os">LINUX &amp; STEAM DECK · 64-BIT</div>
+      <div class="file">TempleFrog-0.1.1-linux-x86_64.AppImage</div>
+      <div class="meta">About 12 MB · one file, make it executable and run</div>
+    </a>
     <a class="dl" href="https://github.com/devall96/TempleFrog/releases">
       <div class="os">EVERYTHING ELSE</div>
       <div class="file">All releases and checksums</div>
       <div class="meta">Release notes, SHA256SUMS.txt, BUILDINFO.json</div>
     </a>
   </div>
-  <p class="release">Linux, Steam Deck and Android builds are planned. You can build it yourself from the <a href="https://github.com/devall96/TempleFrog#building-it">source</a>.</p>
+  <p class="release">The Linux AppImage needs glibc 2.27 or newer: Ubuntu 20.04, Debian 10, Fedora 29, any SteamOS 3 and later. An Android build is planned. You can build it yourself from the <a href="https://github.com/devall96/TempleFrog#building-it">source</a>.</p>
 
   <div class="callout"><b>Bring your own ROM and BIOS.</b> No game files are included, and none ever will be. You need your own <i>Frogger's Adventures: Temple of the Frog</i> (USA) ROM and a Game Boy Advance BIOS dumped from your own hardware. The launcher's box art is made from your ROM, on your PC.</div>
   <div class="callout green"><b>Made with AI.</b> TempleFrog's code, the art and this page were written or made by Claude, Anthropic's AI, through Claude Code. <a href="https://github.com/devall96">devall96</a> came up with it, directs it and tests every build, but no human reviews the code line by line. You run it at your own risk.</div>
@@ -144,9 +149,9 @@
 
   <h2>Getting started</h2>
   <ol>
-    <li><b>Download</b> the zip above and unzip it anywhere you can write to (not <i>Program Files</i>).</li>
-    <li><b>Add your files:</b> your ROM as <code>roms\frog_us.gba</code> and your BIOS as <code>bios\gba_bios.bin</code>, or pick them in the launcher.</li>
-    <li><b>Run TempleFrog.exe</b> and press <b>PLAY</b>. In game, <b>Esc</b> opens the menu (on a pad: click a stick, or Select + Start).</li>
+    <li><b>Download</b> the zip above and unzip it anywhere you can write to (not <i>Program Files</i>). On Linux or a Steam Deck, download the AppImage and make it executable (<code>chmod +x</code>, or <i>Properties &rarr; Permissions</i>).</li>
+    <li><b>Add your files:</b> your ROM as <code>roms\frog_us.gba</code> and your BIOS as <code>bios\gba_bios.bin</code>, or pick them in the launcher (on Linux, always in the launcher, or in <code>~/.local/share/TempleFrog</code>).</li>
+    <li><b>Run TempleFrog.exe</b> (or the AppImage) and press <b>PLAY</b>. On a Steam Deck, add the AppImage to Steam as a non-Steam game to play it in Game Mode. In game, <b>Esc</b> opens the menu (on a pad: click a stick, or Select + Start).</li>
   </ol>
   <table>
     <tr><th>File</th><th>Version</th><th>SHA-1</th></tr>

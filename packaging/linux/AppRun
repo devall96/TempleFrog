@@ -1,0 +1,52 @@
+#!/bin/sh
+# TempleFrog AppImage entry point.
+#
+# TempleFrog keeps its saves, settings, mods and the launcher art made from the
+# player's ROM next to its own program file (the same portable layout as the
+# Windows zip). An AppImage is mounted read-only, so the program is copied to a
+# writable folder and run from there:
+#
+#   $TEMPLEFROG_HOME, else the AppImage's own folder when an empty portable.txt
+#   is next to it, else $XDG_DATA_HOME/TempleFrog (~/.local/share/TempleFrog)
+#
+# The copy is refreshed when this AppImage is a different build. Only files the
+# AppImage ships are replaced; roms/, bios/, saves/, logs/, *.ini, *.cfg,
+# mods/state.toml and the generated box art are never touched.
+set -eu
+
+HERE="$(dirname "$(readlink -f "$0")")"
+PAYLOAD="$HERE/usr/lib/templefrog"
+if [ -n "${TEMPLEFROG_HOME:-}" ]; then
+    DATA="$TEMPLEFROG_HOME"
+elif [ -n "${APPIMAGE:-}" ] && [ -e "$(dirname "$APPIMAGE")/portable.txt" ]; then
+    DATA="$(dirname "$APPIMAGE")/TempleFrog-data"
+else
+    DATA="${XDG_DATA_HOME:-$HOME/.local/share}/TempleFrog"
+fi
+
+mkdir -p "$DATA"
+stamp="$(cat "$PAYLOAD/.build-stamp")"
+if [ "$(cat "$DATA/.build-stamp" 2>/dev/null || true)" != "$stamp" ]; then
+    # Replace the shipped mod packages wholesale (a removed preloaded mod must go).
+    rm -rf "$DATA/mods/packages" "$DATA/lib"
+    mkdir -p "$DATA/mods"
+    # cp -R keeps the tree; no -p, so files become the player's own and writable.
+    for item in TempleFrog gbarecomp-hqx.so lib assets third-party licenses \
+                game.toml recomplauncher.json README.txt THIRD_PARTY_NOTICES.md; do
+        [ -e "$PAYLOAD/$item" ] && cp -R "$PAYLOAD/$item" "$DATA/"
+    done
+    cp -R "$PAYLOAD/mods/packages" "$DATA/mods/"
+    mkdir -p "$DATA/roms" "$DATA/bios" "$DATA/saves"
+    cp "$PAYLOAD/roms/PUT YOUR ROM HERE.txt" "$DATA/roms/"
+    cp "$PAYLOAD/bios/PUT YOUR BIOS HERE.txt" "$DATA/bios/"
+    chmod +x "$DATA/TempleFrog"
+    printf '%s\n' "$stamp" > "$DATA/.build-stamp"
+fi
+
+# recomp-ui: start file pickers next to the AppImage, make shortcuts point at the
+# AppImage itself ($APPIMAGE), and give spawned host tools the original library path.
+export RECOMP_APPIMAGE_PATH="${APPIMAGE:-}"
+export RECOMP_HOST_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
+
+cd "$DATA"
+exec "$DATA/TempleFrog" "$@"

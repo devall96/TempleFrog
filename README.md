@@ -2,7 +2,7 @@
 
 <p align="center"><a href="https://recomplauncher.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://recomplauncher.com/assets/press/launcher/badge-light.svg"><img alt="Get it on RecompLauncher" src="https://recomplauncher.com/assets/press/launcher/badge-dark.svg" height="48"></picture></a></p>
 
-**TempleFrog** brings *Frogger's Adventures: Temple of the Frog* (Game Boy Advance, 2001) to Windows as a **static recompilation**: the game's code is translated ahead of time into a native PC program with [gbarecomp](https://github.com/mstan/gbarecomp), then dressed up for PC with a launcher, an in-game menu, sharper and cleaner sound, save states, rewind, controller support and the whole interface in the game's five languages. It plays the game itself, exactly as it was, from **your own ROM and BIOS**.
+**TempleFrog** brings *Frogger's Adventures: Temple of the Frog* (Game Boy Advance, 2001) to Windows, Linux and the Steam Deck as a **static recompilation**: the game's code is translated ahead of time into a native PC program with [gbarecomp](https://github.com/mstan/gbarecomp), then dressed up for PC with a launcher, an in-game menu, sharper and cleaner sound, save states, rewind, controller support and the whole interface in the game's five languages. It plays the game itself, exactly as it was, from **your own ROM and BIOS**.
 
 **[⬇ Download TempleFrog](https://devall96.github.io/TempleFrog/)** · [All releases](https://github.com/devall96/TempleFrog/releases) · [Get started](#getting-started) · [What it does](#what-it-does) · [Screenshots](#screenshots)
 
@@ -13,7 +13,7 @@
 > **Made with AI.** Every line of TempleFrog's own code, its changes to gbarecomp and recomp-ui, the tests, the art and this page were written or made by Claude, Anthropic's AI, through Claude Code. A human, [devall96](https://github.com/devall96), came up with the idea, directs it and tests every build, but no human reviews the code line by line. [Who did what](#who-did-what) has the details. If you don't want to run code written that way, don't run this. As with anything on the internet, you run it at your own risk.
 
 > [!WARNING]
-> **Early: version 0.1, tested on one Windows PC.** The first level and the attract-mode demos of several worlds have been checked closely (fully static: no interpreted code, no missed functions). Later worlds, the bosses and the Temple haven't been played through on TempleFrog yet. Keep a copy of saves you care about.
+> **Early: version 0.1, tested on one Windows PC.** The Linux AppImage reaches the title screen in Ubuntu, Debian, Fedora, AlmaLinux and Arch containers but hasn't been played on a real Steam Deck yet. The first level and the attract-mode demos of several worlds have been checked closely (fully static: no interpreted code, no missed functions). Later worlds, the bosses and the Temple haven't been played through on TempleFrog yet. Keep a copy of saves you care about.
 
 > [!NOTE]
 > **Not official.** TempleFrog is a fan project. It isn't made by, affiliated with or endorsed by Konami or Nintendo, or by the authors of gbarecomp. Please [open an issue here](https://github.com/devall96/TempleFrog/issues) for TempleFrog problems.
@@ -74,6 +74,8 @@ The game graphics in these screenshots come from a legally obtained copy of the 
 2. Put your ROM in `roms\frog_us.gba` and your BIOS in `bios\gba_bios.bin`, or start `TempleFrog.exe` and pick them in the launcher (Play → *Browse For ROM*, Settings → *BIOS*).
 3. Run **TempleFrog.exe** and press **PLAY**.
 
+**On Linux and the Steam Deck:** download **TempleFrog-0.1.1-linux-x86_64.AppImage**, make it executable (`chmod +x`, or *Properties → Permissions* in your file manager) and run it; pick your ROM and BIOS in the launcher. It needs a 64-bit distro with glibc 2.27 or newer (Ubuntu 20.04, Debian 10, Fedora 29, any SteamOS 3 and later) and OpenGL. TempleFrog runs from `~/.local/share/TempleFrog`, where your saves and settings live; an empty `portable.txt` next to the AppImage keeps everything in a `TempleFrog-data` folder beside it instead. On a Steam Deck, add the AppImage to Steam (*Add a Non-Steam Game*) to play it in Game Mode.
+
 **With [RecompLauncher](https://recomplauncher.com):** install TempleFrog there and pick your ROM (the .gba, or a .zip with it inside) on its setup screen; it checks the ROM, starts the game straight away and has TempleFrog's settings on the game's page. The BIOS still goes in `bios\gba_bios.bin` (or TempleFrog asks for it on the first start). Scripts and shortcuts can do the same with `TempleFrog.exe --game <your ROM>`.
 
 In game, **Esc** opens the menu (on a controller: click a stick, or Select + Start). The launcher checks your files against these:
@@ -106,6 +108,19 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target TempleFrog
 build\TempleFrog.exe game.toml
 ```
+
+On Linux (`build-essential cmake ninja-build libsdl2-dev`, or your distro's equivalents), with the same ROM and BIOS paths:
+
+```bash
+cmake -S gbarecomp -B gbarecomp/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build gbarecomp/build --target gba_recompile
+tools/regen.sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target TempleFrog
+build/TempleFrog game.toml
+```
+
+The Linux release is `tools/release_appimage.sh x.y.z`: it builds in an AlmaLinux 8 container with podman (glibc 2.28, so the AppImage runs on old systems and every Steam Deck) and packs it with [appimagetool](https://github.com/AppImage/appimagetool) from `tools/appimagetool-x86_64.AppImage`. `tools/test_appimage_distros.sh <AppImage>` boots it to the title screen and opens the launcher in Ubuntu 20.04/22.04, Debian 11, AlmaLinux 8, Fedora 36/latest and Arch containers.
 
 `tools\regen.ps1` checks the ROM's SHA-1 and generates the native code into `generated\` (never committed). `tools\package_release.ps1 -Version x.y.z` makes the release zip and refuses to package ROMs, BIOS files, saves, settings, images made from the ROM or personal paths. `tools\perf\run_suite.ps1` is the frame-time suite (1% and 0.1% lows, hitches, stutter). Research notes are in [`docs/`](docs).
 
