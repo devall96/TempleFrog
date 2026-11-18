@@ -54,6 +54,9 @@ Copy-Item (Join-Path $root 'third_party\fonts\Fredoka\OFL.txt') (Join-Path $lic 
 Copy-Item (Join-Path $root 'recomp-ui\assets\common\fonts\NOTICE.md') (Join-Path $lic 'Launcher-fonts-NOTICE.md')
 Copy-Item (Join-Path $root 'recomp-ui\src\third_party\imgui\LICENSE.txt') (Join-Path $lic 'DearImGui-MIT.txt') -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $root 'docs\README-release.txt') (Join-Path $stage 'README.txt')
+# RecompLauncher's setup and settings profile, next to the program (https://recomplauncher.com/sdk).
+Copy-Item (Join-Path $root 'recomplauncher.json') $stage
+$null = Get-Content (Join-Path $stage 'recomplauncher.json') -Raw | ConvertFrom-Json   # fails the build on bad JSON
 
 # ---- audit ----------------------------------------------------------------
 $bad = @()

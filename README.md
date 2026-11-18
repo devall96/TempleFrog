@@ -1,5 +1,7 @@
 <p align="center"><img src="docs/art/banner.png" alt="TempleFrog"></p>
 
+<p align="center"><a href="https://recomplauncher.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://recomplauncher.com/assets/press/launcher/badge-light.svg"><img alt="Get it on RecompLauncher" src="https://recomplauncher.com/assets/press/launcher/badge-dark.svg" height="48"></picture></a></p>
+
 **TempleFrog** brings *Frogger's Adventures: Temple of the Frog* (Game Boy Advance, 2001) to Windows as a **static recompilation**: the game's code is translated ahead of time into a native PC program with [gbarecomp](https://github.com/mstan/gbarecomp), then dressed up for PC with a launcher, an in-game menu, sharper and cleaner sound, save states, rewind, controller support and the whole interface in the game's five languages. It plays the game itself, exactly as it was, from **your own ROM and BIOS**.
 
 **[⬇ Download TempleFrog](https://devall96.github.io/TempleFrog/)** · [All releases](https://github.com/devall96/TempleFrog/releases) · [Get started](#getting-started) · [What it does](#what-it-does) · [Screenshots](#screenshots)
@@ -71,6 +73,8 @@ The game graphics in these screenshots come from a legally obtained copy of the 
 1. Download **[TempleFrog-0.1.0-windows-x64.zip](https://github.com/devall96/TempleFrog/releases/latest)** and unzip it anywhere you can write to (not *Program Files*).
 2. Put your ROM in `roms\frog_us.gba` and your BIOS in `bios\gba_bios.bin`, or start `TempleFrog.exe` and pick them in the launcher (Play → *Browse For ROM*, Settings → *BIOS*).
 3. Run **TempleFrog.exe** and press **PLAY**.
+
+**With [RecompLauncher](https://recomplauncher.com):** install TempleFrog there and pick your ROM on its setup screen; it checks the ROM, starts the game straight away and has TempleFrog's settings on the game's page. The BIOS still goes in `bios\gba_bios.bin` (or TempleFrog asks for it on the first start). Scripts and shortcuts can do the same with `TempleFrog.exe --game <your ROM>`.
 
 In game, **Esc** opens the menu (on a controller: click a stick, or Select + Start). The launcher checks your files against these:
 
