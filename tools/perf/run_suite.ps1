@@ -14,13 +14,14 @@ suite if a hitch lines up with someone else's build.
 #>
 param(
     [string]$Label = (Get-Date -Format 'yyyyMMdd-HHmmss'),
+    [string]$Exe = 'build\TempleFrog.exe',   # e.g. build-static\TempleFrog.exe for a baseline
     [int]$Frames = 5400,
     [int]$Repeats = 2,
     [switch]$SaveBaseline
 )
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$exe = Join-Path $root 'build\TempleFrog.exe'
+$exe = if ([IO.Path]::IsPathRooted($Exe)) { $Exe } else { Join-Path $root $Exe }
 $out = Join-Path $root "captures\perf\$Label"
 $baseline = Join-Path $root 'tools\perf\baseline.json'
 $segments = 'boot:0-700,menus:700-2200,level:2200-'

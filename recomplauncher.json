@@ -27,6 +27,19 @@
       "GBARECOMP_UI_FAMILY_DEFAULT": "{pad}"
     }
   },
+  "prepare": {
+    "program": [
+      "TempleFrog.exe",
+      "TempleFrog.AppImage"
+    ],
+    "args": [
+      "--prepare",
+      "--game",
+      "{game}"
+    ],
+    "label": "Building the game from your ROM (once, a minute or two)",
+    "timeout": 1800
+  },
   "saves": [
     "{install}/saves",
     "{install}/TempleFrog-data/saves",
@@ -114,7 +127,10 @@
     "21": "That .zip has no .gba ROM inside. Pick the .gba file, or a .zip that holds it.",
     "22": "This is the European release of the game. TempleFrog needs the USA one (game code AFRE).",
     "23": "This file isn't Frogger's Adventures: Temple of the Frog (USA). Pick the USA .gba ROM.",
-    "24": "TempleFrog needs your own Game Boy Advance BIOS. Open the game folder (the Game folder button), put it in the bios folder as gba_bios.bin, then press Play again."
+    "24": "TempleFrog needs your own Game Boy Advance BIOS. Open the game folder (the Game folder button), put it in the bios folder as gba_bios.bin, then press Play again.",
+    "25": "TempleFrog couldn't build the game from your ROM. Open the game folder (the Game folder button) and send native/build.log with a bug report.",
+    "26": "Part of TempleFrog is missing (the gamekit folder). Reinstall TempleFrog.",
+    "27": "TempleFrog was closed while it was building the game. Press Play to finish it."
   },
   "settings": [
     {

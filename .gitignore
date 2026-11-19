@@ -52,3 +52,7 @@ mods/state.toml
 build-appimage/
 tools/appimagetool*.AppImage
 build-appimage-el8/
+
+# Game modules built from the ROM/BIOS (native/), and the downloaded compiler
+native/
+tools/toolchain-cache/

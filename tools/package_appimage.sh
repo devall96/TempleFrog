@@ -3,18 +3,22 @@
 #
 #   tools/package_appimage.sh <version>
 #
-# Needs generated/ (tools/regen.sh), a C/C++ toolchain, cmake, ninja, the X11 /
-# Wayland / PulseAudio / ALSA / udev / libdecor development headers (for SDL's
+# Needs a C/C++ toolchain, cmake, ninja, python3, the X11 / Wayland /
+# PulseAudio / ALSA / udev / libdecor development headers (for SDL's
 # runtime-loaded backends) and appimagetool (in $APPIMAGETOOL, on PATH, or at
-# tools/appimagetool-x86_64.AppImage).
+# tools/appimagetool-x86_64.AppImage). No ROM: the AppImage carries no code made
+# from the game. The player's ROM and BIOS are recompiled and compiled into game
+# modules on their machine with the game kit packed here (gbarecomp/docs/GAME_MODULES.md),
+# so this runs anywhere, GitHub Actions included.
 #
 # The AppImage needs a glibc at least as new as the build machine's: releases are
 # built by tools/release_appimage.sh in an AlmaLinux 8 container (glibc 2.28).
 #
 # Writes out/release/TempleFrog-<version>-linux-x86_64.AppImage, SHA256SUMS-linux.txt
 # and BUILDINFO-linux.json. Like package_release.ps1, it never packages a ROM, BIOS,
-# save, the player's settings or images made from the ROM; the audit fails the build
-# if any of those, or a personal path, gets in.
+# save, the player's settings, images made from the ROM or code recompiled from the
+# ROM or BIOS; the audit (tools/audit_package.py) fails the build if any of those,
+# or a personal path, gets in.
 set -euo pipefail
 
 version="${1:?usage: tools/package_appimage.sh <version>}"
@@ -48,6 +52,10 @@ if [[ ! -f "$sdl_prefix/lib/libSDL2-2.0.so.0" ]]; then
     cmake --install "$work/sdl-build"
 fi
 
+# ---- the compiler the game kit carries ------------------------------------------
+zig_dir="${TEMPLEFROG_ZIG_DIR:-$root/tools/toolchain-cache/zig-linux}"
+[[ -x "$zig_dir/zig" ]] || python3 "$root/tools/zig_toolchain.py" --platform linux --dest "$zig_dir"
+
 # ---- TempleFrog ----------------------------------------------------------------
 # $ORIGIN/lib finds the bundled SDL next to the program; no build-tree RPATH.
 cmake -S "$root" -B "$work/game" -G Ninja -DCMAKE_BUILD_TYPE=Release \
@@ -55,8 +63,9 @@ cmake -S "$root" -B "$work/game" -G Ninja -DCMAKE_BUILD_TYPE=Release \
     -DOpenGL_GL_PREFERENCE=LEGACY \
     -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON -DCMAKE_INSTALL_RPATH='$ORIGIN/lib' \
     -DCMAKE_EXE_LINKER_FLAGS="${TEMPLEFROG_LDFLAGS:-}" \
-    -DCMAKE_C_FLAGS="$map" -DCMAKE_CXX_FLAGS="$map"
-cmake --build "$work/game" --target TempleFrog -j "$jobs"
+    -DCMAKE_C_FLAGS="$map" -DCMAKE_CXX_FLAGS="$map" \
+    -DTEMPLEFROG_GAME_MODULES=ON -DGBARECOMP_EMBED_SRC_DIR=OFF -DTEMPLEFROG_ZIG_DIR="$zig_dir"
+cmake --build "$work/game" --target TempleFrog templefrog_gamekit -j "$jobs"
 build="$work/game"
 
 # ---- AppDir --------------------------------------------------------------------
@@ -85,6 +94,9 @@ rm -f "$payload/assets/img/boxart.tga" "$payload/assets/img/backdrop.tga"
 # Preloaded mod packages only (not the player's selection).
 mkdir -p "$payload/mods"
 cp -R "$build/mods/packages" "$payload/mods/"
+# The game kit: recompiler, module SDK and compiler. AppRun runs it from the image.
+cp -R "$build/gamekit" "$payload/gamekit"
+strip --strip-unneeded "$payload/gamekit/gba_recompile"
 
 # game.toml with the release-relative BIOS path.
 sed 's|path = "gbarecomp/bios/gba_bios.bin"|path = "bios/gba_bios.bin"|' "$root/game.toml" > "$payload/game.toml"
@@ -126,27 +138,16 @@ cp "$root/art/icon/templefrog_256.png" "$appdir/usr/share/icons/hicolor/256x256/
 ln -s templefrog.png "$appdir/.DirIcon"
 
 # ---- audit ----------------------------------------------------------------------
-# The build machine's home and user name (passed in from the host for container builds).
+# ROM/BIOS files, saves, settings, game code (recompiler-made names; with the
+# ROM and BIOS at hand, slices of their bytes too) and personal strings. The
+# build machine's home and user name come from the host for container builds.
 audit_home="${AUDIT_HOME:-$HOME}"; audit_user="${AUDIT_USER:-${USER:-$(id -un)}}"
-needles=(proton.me 'Claude Work' devall96@ "/home/$audit_user/")
-[[ ${#audit_home} -gt 1 ]] && needles+=("$audit_home/")
-bad=()
-while IFS= read -r -d '' f; do
-    base="$(basename "$f")"
-    if [[ "$base" =~ \.(gba|agb|bin|sav|srm|state[0-9]*|cfg|ini|replay|log)$ ]]; then
-        bad+=("banned file type: $f")
-    fi
-    case "$base" in boxart.tga|backdrop.tga|state.toml|templefrog.ini)
-        bad+=("player or ROM-derived file: $f") ;;
-    esac
-    for needle in "${needles[@]}"; do
-        if grep -qaF -- "$needle" "$f"; then bad+=("personal string '$needle' in $f"); fi
-    done
-done < <(find "$appdir" -type f -print0)
-if ((${#bad[@]})); then
-    printf 'AUDIT FAIL: %s\n' "${bad[@]}"; exit 1
-fi
-echo "audit: clean"
+audit=(python3 "$root/tools/audit_package.py" "$appdir"
+       --needle proton.me --needle "Claude Work" --needle devall96@ --needle "/home/$audit_user/")
+[[ ${#audit_home} -gt 1 ]] && audit+=(--needle "$audit_home/")
+[[ -f "$root/roms/frog_us.gba" ]] && audit+=(--rom "$root/roms/frog_us.gba")
+[[ -f "$root/gbarecomp/bios/gba_bios.bin" ]] && audit+=(--bios "$root/gbarecomp/bios/gba_bios.bin")
+"${audit[@]}"
 
 # ---- AppImage, sums, build info --------------------------------------------------
 image="$out/$name.AppImage"

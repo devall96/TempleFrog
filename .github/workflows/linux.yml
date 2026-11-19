@@ -1,0 +1,81 @@
+# Builds the Linux AppImage in the AlmaLinux 8 container (glibc 2.28, so it runs
+# on old systems and every Steam Deck), checks it on seven distros, and can
+# attach it to the GitHub release.
+#
+# No ROM or BIOS is involved anywhere: the AppImage carries no code made from the
+# game. Players' copies are recompiled and compiled into game modules on their
+# own machines with the game kit the AppImage packs (gbarecomp/docs/GAME_MODULES.md). Here
+# the distro check builds and loads a stand-in module with that kit
+# (--kit-selftest) and opens the launcher on a virtual display.
+name: Linux AppImage
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Attach the AppImage to the existing GitHub release v<version>"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "gbarecomp"
+      - "recomp-ui"
+      - "CMakeLists.txt"
+      - "game.toml"
+      - "recomplauncher.json"
+      - "packaging/linux/**"
+      - "tools/*.sh"
+      - "tools/*.py"
+      - "tools/appimage-builder.Containerfile"
+      - ".github/workflows/linux.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  appimage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Version
+        id: ver
+        run: |
+          v=$(sed -n 's/^project(TempleFrog VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "TempleFrog $v"
+
+      - name: appimagetool 1.9.1
+        run: |
+          curl -fsSL -o tools/appimagetool-x86_64.AppImage \
+            https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          echo "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0  tools/appimagetool-x86_64.AppImage" | sha256sum -c
+          chmod +x tools/appimagetool-x86_64.AppImage
+
+      - name: Build (AlmaLinux 8 container)
+        run: tools/release_appimage.sh "${{ steps.ver.outputs.version }}"
+
+      - name: Check on Ubuntu, Debian, AlmaLinux, Fedora and Arch
+        run: tools/test_appimage_distros.sh "out/release/TempleFrog-${{ steps.ver.outputs.version }}-linux-x86_64.AppImage"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TempleFrog-${{ steps.ver.outputs.version }}-linux-x86_64
+          path: |
+            out/release/TempleFrog-${{ steps.ver.outputs.version }}-linux-x86_64.AppImage
+            out/release/SHA256SUMS-linux.txt
+            out/release/BUILDINFO-linux.json
+
+      - name: Attach to release v${{ steps.ver.outputs.version }}
+        if: ${{ inputs.publish }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "v${{ steps.ver.outputs.version }}" --clobber \
+            "out/release/TempleFrog-${{ steps.ver.outputs.version }}-linux-x86_64.AppImage" \
+            out/release/SHA256SUMS-linux.txt out/release/BUILDINFO-linux.json

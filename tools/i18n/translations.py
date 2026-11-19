@@ -434,3 +434,29 @@ T.update({
    "Lo que llena el espacio alrededor de la imagen cuando la ventana es más ancha o alta que el juego: negro, o un suave brillo difuminado del propio juego.",
    "Cosa riempie lo spazio attorno all'immagine quando la finestra è più larga o alta del gioco: nero, oppure un morbido bagliore sfocato del gioco stesso."),
 })
+
+# Building the game from the player's ROM (src/game_build.cpp, src/build_screen.cpp).
+T.update({
+ "Building TempleFrog": ("Préparation de TempleFrog", "TempleFrog wird erstellt", "Preparando TempleFrog", "Preparazione di TempleFrog"),
+ "TempleFrog is making the game from your own ROM and BIOS. This happens once and takes a minute or two.":
+  ("TempleFrog crée le jeu à partir de votre propre ROM et de votre BIOS. Cela n'arrive qu'une fois et prend une minute ou deux.",
+   "TempleFrog erstellt das Spiel aus deiner eigenen ROM und deinem BIOS. Das passiert nur einmal und dauert ein bis zwei Minuten.",
+   "TempleFrog está creando el juego a partir de tu propia ROM y tu BIOS. Solo ocurre una vez y tarda uno o dos minutos.",
+   "TempleFrog sta creando il gioco dalla tua ROM e dal tuo BIOS. Succede una sola volta e richiede un paio di minuti."),
+ "TempleFrog couldn't build the game": ("TempleFrog n'a pas pu créer le jeu", "TempleFrog konnte das Spiel nicht erstellen", "TempleFrog no pudo crear el juego", "TempleFrog non è riuscito a creare il gioco"),
+ "Recompiling your ROM": ("Recompilation de votre ROM", "Deine ROM wird rekompiliert", "Recompilando tu ROM", "Ricompilazione della tua ROM"),
+ "Recompiling your BIOS": ("Recompilation de votre BIOS", "Dein BIOS wird rekompiliert", "Recompilando tu BIOS", "Ricompilazione del tuo BIOS"),
+ "Compiling the game": ("Compilation du jeu", "Das Spiel wird kompiliert", "Compilando el juego", "Compilazione del gioco"),
+ "Compiling the BIOS": ("Compilation du BIOS", "Das BIOS wird kompiliert", "Compilando el BIOS", "Compilazione del BIOS"),
+ "Linking": ("Édition des liens", "Wird gelinkt", "Enlazando", "Collegamento"),
+ "Recompiling failed": ("La recompilation a échoué", "Rekompilieren fehlgeschlagen", "La recompilación falló", "Ricompilazione non riuscita"),
+ "Compiling failed": ("La compilation a échoué", "Kompilieren fehlgeschlagen", "La compilación falló", "Compilazione non riuscita"),
+ "Linking failed": ("L'édition des liens a échoué", "Linken fehlgeschlagen", "El enlazado falló", "Collegamento non riuscito"),
+ "TempleFrog's game kit is missing; reinstall TempleFrog.":
+  ("Le kit de jeu de TempleFrog est manquant ; réinstallez TempleFrog.",
+   "Das Spielpaket von TempleFrog fehlt; installiere TempleFrog neu.",
+   "Falta el kit de juego de TempleFrog; reinstala TempleFrog.",
+   "Manca il kit di gioco di TempleFrog; reinstalla TempleFrog."),
+ "Details are in": ("Détails dans", "Details stehen in", "Detalles en", "Dettagli in"),
+ "Close": ("Fermer", "Schließen", "Cerrar", "Chiudi"),
+})

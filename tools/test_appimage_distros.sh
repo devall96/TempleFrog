@@ -3,17 +3,26 @@
 #
 #   tools/test_appimage_distros.sh <TempleFrog.AppImage> [rom] [bios]
 #
-# In each container: run the game headless to the title screen (frame 900) and
-# compare the frame with every other distro's, then open the launcher on a
-# virtual 1280x800 X display (the Steam Deck's size) and check it stays up for
-# 10 s, which exercises SDL loading X11/OpenGL from that distro. The ROM and BIOS
-# are mounted read-only and never leave this machine.
+# In each container, with a ROM and BIOS (a developer machine): build the game
+# from them with the AppImage's own game kit (--prepare, as RecompLauncher does),
+# run it headless to the title screen (frame 900) and compare the frame with
+# every other distro's. Without them (GitHub Actions): build and load a
+# stand-in module with the game kit (--kit-selftest). Then, either way, open the
+# launcher on a virtual 1280x800 X display (the Steam Deck's size) and check it
+# stays up for 10 s, which exercises SDL loading X11/OpenGL from that distro.
+# The ROM and BIOS are mounted read-only and never leave this machine.
 set -uo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 appimage="$(readlink -f "${1:?usage: tools/test_appimage_distros.sh <AppImage> [rom] [bios]}")"
-rom="$(readlink -f "${2:-$root/roms/frog_us.gba}")"
-bios="$(readlink -f "${3:-$root/gbarecomp/bios/gba_bios.bin}")"
+rom="$(readlink -f "${2:-$root/roms/frog_us.gba}" 2>/dev/null || true)"
+bios="$(readlink -f "${3:-$root/gbarecomp/bios/gba_bios.bin}" 2>/dev/null || true)"
+mounts=()
+if [[ -f "$rom" && -f "$bios" ]]; then
+    mounts=(-v "$rom:/rom:ro" -v "$bios:/bios:ro")
+else
+    echo "no ROM/BIOS: checking the game kit with --kit-selftest instead of playing"
+fi
 out="$(mktemp -d)"
 trap 'rm -rf "$out"' EXIT
 
@@ -42,13 +51,21 @@ eval "$DEPS" || { echo "DEPS_FAILED"; exit 3; }
 cp /app/TempleFrog.AppImage /tmp/tf.AppImage
 export APPIMAGE_EXTRACT_AND_RUN=1 TEMPLEFROG_HOME=/tmp/home
 mkdir -p /tmp/home/roms /tmp/home/bios
-cp /rom /tmp/home/roms/frog_us.gba; cp /bios /tmp/home/bios/gba_bios.bin
 ldd_out=$(cd /tmp && /tmp/tf.AppImage --appimage-extract >/dev/null 2>&1; ldd /tmp/squashfs-root/usr/lib/templefrog/TempleFrog 2>&1 | grep -i "not found")
 [ -n "$ldd_out" ] && echo "MISSING_LIBS: $ldd_out"
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 120 /tmp/tf.AppImage --no-window --frames 900 \
-    --dump-bmp /out/frame.bmp --save-path /tmp/scratch.sav game.toml > /out/headless.log 2>&1
-echo "HEADLESS_EXIT=$?"
-grep -o "self_heal_coverage=[A-Z_]*" /out/headless.log
+if [ -f /rom ]; then
+    cp /rom /tmp/home/roms/frog_us.gba; cp /bios /tmp/home/bios/gba_bios.bin
+    timeout 900 /tmp/tf.AppImage --prepare --game /tmp/home/roms/frog_us.gba > /out/prepare.log 2>&1
+    echo "PREPARE_EXIT=$?"
+    SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 120 /tmp/tf.AppImage --no-window --frames 900 \
+        --dump-bmp /out/frame.bmp --save-path /tmp/scratch.sav game.toml > /out/headless.log 2>&1
+    echo "HEADLESS_EXIT=$?"
+    grep -o "self_heal_coverage=[A-Z_]*" /out/headless.log
+else
+    timeout 300 /tmp/tf.AppImage --kit-selftest > /out/selftest.log 2>&1
+    echo "HEADLESS_EXIT=$?"
+    echo "self_heal_coverage=KIT_SELFTEST"
+fi
 SDL_AUDIODRIVER=dummy xvfb-run -a -s "-screen 0 1280x800x24" timeout 10 /tmp/tf.AppImage > /out/gui.log 2>&1
 echo "GUI_EXIT=$?"
 '
@@ -58,10 +75,10 @@ ref=""; fails=0
 for entry in "${distros[@]}"; do
     IFS='|' read -r image deps label <<<"$entry"
     d="$out/$(echo "$image" | tr '/:' '__')"; mkdir -p "$d"
-    podman run --rm -v "$appimage:/app/TempleFrog.AppImage:ro" -v "$rom:/rom:ro" -v "$bios:/bios:ro" \
+    podman run --rm -v "$appimage:/app/TempleFrog.AppImage:ro" "${mounts[@]}" \
         -v "$d:/out" -e DEPS="$deps" "$image" sh -c "$inner" > "$d/run.txt" 2>&1
     h=$(sed -n 's/^HEADLESS_EXIT=//p' "$d/run.txt"); g=$(sed -n 's/^GUI_EXIT=//p' "$d/run.txt")
-    cov=$(grep -o 'FULLY_STATIC\|[A-Z_]*STATIC[A-Z_]*' "$d/run.txt" | head -1)
+    cov=$(grep -o 'FULLY_STATIC\|KIT_SELFTEST\|[A-Z_]*STATIC[A-Z_]*' "$d/run.txt" | head -1)
     frame="-"
     if [[ -f "$d/frame.bmp" ]]; then
         sum=$(sha1sum "$d/frame.bmp" | cut -c1-12); [[ -z "$ref" ]] && ref=$sum
@@ -71,9 +88,11 @@ for entry in "${distros[@]}"; do
     gs="FAIL"; [[ "$g" == 124 ]] && gs="ok (up)"   # 124: still running when timeout stopped it
     grep -q '^MISSING_LIBS' "$d/run.txt" && gs="$gs, libs!"
     printf '%-48s %-10s %-10s %-14s %s\n' "$label" "$hs" "$gs" "${cov:--}" "$frame"
-    if [[ "$hs" != ok || "$g" != 124 || "$frame" != match ]]; then
+    [[ ${#mounts[@]} -eq 0 ]] && frame="n/a"   # nothing to compare without the game
+    if [[ "$hs" != ok || "$g" != 124 || ( "$frame" != match && "$frame" != n/a ) ]]; then
         fails=$((fails + 1))
-        echo "---- $label"; tail -15 "$d/run.txt"; tail -15 "$d/gui.log" 2>/dev/null; echo "----"
+        echo "---- $label"; tail -15 "$d/run.txt"; tail -15 "$d/gui.log" 2>/dev/null
+        tail -15 "$d/prepare.log" "$d/selftest.log" 2>/dev/null; echo "----"
     fi
 done
 exit $((fails > 0))

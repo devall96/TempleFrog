@@ -127,7 +127,7 @@
   <p class="release">The Linux AppImage needs glibc 2.27 or newer: Ubuntu 20.04, Debian 10, Fedora 29, any SteamOS 3 and later. An Android build is planned. You can build it yourself from the <a href="https://github.com/devall96/TempleFrog#building-it">source</a>.</p>
   <p class="release">Prefer a launcher? TempleFrog works with <a href="https://recomplauncher.com">RecompLauncher</a> on Windows, Linux and the Steam Deck: pick your ROM on its setup screen and it checks it, starts the game and shows TempleFrog's settings on the game's page. It's also in the <a href="https://quiverlauncher.com/apps/frogger-s-adventures-temple-of-the-frog-templefrog">Quiver Launcher</a> catalog.</p>
 
-  <div class="callout"><b>Bring your own ROM and BIOS.</b> No game files are included, and none ever will be. You need your own <i>Frogger's Adventures: Temple of the Frog</i> (USA) ROM and a Game Boy Advance BIOS dumped from your own hardware. The launcher's box art is made from your ROM, on your PC.</div>
+  <div class="callout"><b>Bring your own ROM and BIOS.</b> No game files are included, and none ever will be: the download holds no code or data from the game. You need your own <i>Frogger's Adventures: Temple of the Frog</i> (USA) ROM and a Game Boy Advance BIOS dumped from your own hardware. On the first start, TempleFrog builds the game from them on your PC with the recompiler and compiler it comes with (a minute or two, once). The launcher's box art is made from your ROM there too.</div>
   <div class="callout green"><b>Made with AI.</b> TempleFrog's code, the art and this page were written or made by Claude, Anthropic's AI, through Claude Code. <a href="https://github.com/devall96">devall96</a> came up with it, directs it and tests every build, but no human reviews the code line by line. You run it at your own risk.</div>
   <div class="callout green"><b>Not official.</b> A fan project, not affiliated with Konami or Nintendo, and for non-commercial use only.</div>
 
@@ -167,7 +167,7 @@
   <ol>
     <li><b>Download</b> the zip above and unzip it anywhere you can write to (not <i>Program Files</i>). On Linux or a Steam Deck, download the AppImage and make it executable (<code>chmod +x</code>, or <i>Properties &rarr; Permissions</i>).</li>
     <li><b>Add your files:</b> your ROM as <code>roms\frog_us.gba</code> and your BIOS as <code>bios\gba_bios.bin</code>, or pick them in the launcher (on Linux, always in the launcher, or in <code>~/.local/share/TempleFrog</code>).</li>
-    <li><b>Run TempleFrog.exe</b> (or the AppImage) and press <b>PLAY</b>. On a Steam Deck, add the AppImage to Steam as a non-Steam game to play it in Game Mode. In game, <b>Esc</b> opens the menu (on a pad: click a stick, or Select + Start).</li>
+    <li><b>Run TempleFrog.exe</b> (or the AppImage) and press <b>PLAY</b>. The first time, TempleFrog builds the game from your ROM and BIOS behind a progress window; after that it starts straight away. On a Steam Deck, add the AppImage to Steam as a non-Steam game to play it in Game Mode. In game, <b>Esc</b> opens the menu (on a pad: click a stick, or Select + Start).</li>
   </ol>
   <table>
     <tr><th>File</th><th>Version</th><th>SHA-1</th></tr>

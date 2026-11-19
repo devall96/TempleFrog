@@ -15,6 +15,8 @@ Release builds carry each licence text in the `licenses/` folder.
 | [Fredoka](https://github.com/hafontia/Fredoka-One) by Milena Brandão | Menu text | SIL OFL 1.1 |
 | LatoLatin by Łukasz Dziedzic, Noto Sans Symbols 2 by the Noto Project Authors | Fallback text and symbols | SIL OFL 1.1 |
 | [OpenMoji](https://openmoji.org) | Emoji fallback | CC BY-SA 4.0 |
+| [Zig](https://ziglang.org) 0.17.1 (`gamekit/zig`), with the [LLVM/Clang](https://llvm.org) it is built on | Compiles the game from your ROM and BIOS on your PC (the game kit) | MIT (Zig); Apache 2.0 with LLVM Exception (LLVM, Clang, libc++ headers) |
+| [mingw-w64](https://www.mingw-w64.org) headers and C runtime sources (Windows kit), glibc headers and stubs (Linux kit), shipped inside Zig | The C library the game is compiled against | mingw-w64: ZPL / public domain (see `gamekit/zig/lib/libc/mingw/COPYING`); glibc: LGPL-2.1 (see `gamekit/zig/lib/libc/glibc/LICENSES`) |
 
 The TempleFrog icon is original art made for this project with Google Gemini (see `art/icon/README.md`). It is not
 Konami's character and contains no game art.

@@ -4,17 +4,25 @@ Build TempleFrog's Windows release package from build\ (Release):
   powershell -NoProfile -ExecutionPolicy Bypass -File tools\package_release.ps1 -Version 0.1.0
 
 Writes out\release\TempleFrog-<version>-windows-x64.zip, SHA256SUMS.txt and BUILDINFO.json.
-The package holds the program, its DLLs, TempleFrog's own art and fonts, the preloaded mods and the licences.
-It never holds a ROM, BIOS, save, save state, the player's settings, logs, or images made from the ROM; the audit
-at the end fails the build if any of those, or a personal path, gets in.
+The package holds the program, its DLLs, TempleFrog's own art and fonts, the preloaded mods, the licences and the
+game kit (recompiler, module SDK and compiler) that builds the game from the player's ROM on their PC
+(gbarecomp/docs/GAME_MODULES.md). build\ must be configured with TEMPLEFROG_GAME_MODULES=ON (the default).
+It never holds a ROM, BIOS, save, save state, the player's settings, logs, images made from the ROM or code
+recompiled from the ROM or BIOS; the audit at the end (tools\audit_package.py) fails the build if any of those,
+or a personal path, gets in.
 #>
-param([Parameter(Mandatory)][string]$Version)
+param([Parameter(Mandatory)][string]$Version, [string]$BuildDir = 'build')
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$build = Join-Path $root 'build'
+$build = if ([IO.Path]::IsPathRooted($BuildDir)) { $BuildDir } else { Join-Path $root $BuildDir }
 $name = "TempleFrog-$Version-windows-x64"
 $out = Join-Path $root 'out\release'
 $stage = Join-Path $out $name
+# A build with the game linked in must never be packaged.
+$cache = Get-Content (Join-Path $build 'CMakeCache.txt') -Raw
+if ($cache -notmatch 'TEMPLEFROG_GAME_MODULES:BOOL=ON' -or -not (Test-Path (Join-Path $build 'gamekit\KIT_ID'))) {
+    throw "$build is not a game-module build (TEMPLEFROG_GAME_MODULES=ON with the game kit); refusing to package it"
+}
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Force $stage | Out-Null
 
@@ -29,6 +37,8 @@ Copy-Item (Join-Path $build 'third-party') (Join-Path $stage 'third-party') -Rec
 # Preloaded mod packages only (not the player's selection).
 New-Item -ItemType Directory -Force (Join-Path $stage 'mods') | Out-Null
 Copy-Item (Join-Path $build 'mods\packages') (Join-Path $stage 'mods\packages') -Recurse
+# The game kit: builds the game from the player's ROM and BIOS on their PC.
+Copy-Item (Join-Path $build 'gamekit') (Join-Path $stage 'gamekit') -Recurse
 
 # game.toml with release-relative BIOS path.
 $toml = Get-Content (Join-Path $root 'game.toml') -Raw
@@ -59,33 +69,23 @@ Copy-Item (Join-Path $root 'recomplauncher.json') $stage
 $null = Get-Content (Join-Path $stage 'recomplauncher.json') -Raw | ConvertFrom-Json   # fails the build on bad JSON
 
 # ---- audit ----------------------------------------------------------------
-$bad = @()
-$banned = '\.(gba|agb|bin|sav|srm|state\d*|cfg|ini|replay|log)$'
-Get-ChildItem $stage -Recurse -File | ForEach-Object {
-    if ($_.Name -match $banned) { $bad += "banned file type: $($_.FullName)" }
-    if ($_.Name -in 'boxart.tga', 'backdrop.tga', 'state.toml', 'templefrog.ini') { $bad += "player or ROM-derived file: $($_.FullName)" }
+# ROM/BIOS files, saves, settings, game code (recompiler-made names; with the ROM and BIOS at hand, slices of
+# their bytes too) and personal strings: the Windows account name inside a user path (the public GitHub handle
+# devall96 is fine), local folders and private contact details.
+$audit = @('-I', (Join-Path $root 'tools\audit_package.py'), $stage)
+foreach ($n in @('proton.me', 'OneDrive\Documents', 'Claude Work', 'devall96@', "Users\$env:USERNAME", "Users/$env:USERNAME")) {
+    $audit += @('--needle', $n)
 }
-# The Windows account name inside a user path (the public GitHub handle devall96 is fine), local folders and
-# private contact details.
-$needles = @('proton.me', 'OneDrive\Documents', 'Claude Work', 'devall96@', "Users\$env:USERNAME", "Users/$env:USERNAME")
-Get-ChildItem $stage -Recurse -File | ForEach-Object {
-    $bytes = [IO.File]::ReadAllBytes($_.FullName)
-    $text = [Text.Encoding]::GetEncoding(28591).GetString($bytes)
-    $wide = [Text.Encoding]::Unicode.GetString($bytes)
-    foreach ($n in $needles) {
-        if ($n -and ($text.IndexOf($n, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
-                     $wide.IndexOf($n, [StringComparison]::OrdinalIgnoreCase) -ge 0)) {
-            $bad += "personal string '$n' in $($_.FullName)"
-        }
-    }
-}
-if ($bad) { $bad | ForEach-Object { Write-Host "AUDIT FAIL: $_" }; throw 'release audit failed' }
-Write-Host 'audit: clean'
+$rom = Join-Path $root 'roms\frog_us.gba'; $bios = Join-Path $root 'gbarecomp\bios\gba_bios.bin'
+if (Test-Path $rom) { $audit += @('--rom', $rom) }
+if (Test-Path $bios) { $audit += @('--bios', $bios) }
+python @audit
+if ($LASTEXITCODE -ne 0) { throw 'release audit failed' }
 
 # ---- zip, sums, build info ----------------------------------------------------
 $zip = Join-Path $out "$name.zip"
 Remove-Item $zip -ErrorAction SilentlyContinue
-Compress-Archive -Path $stage -DestinationPath $zip
+Compress-Archive -Path $stage -DestinationPath $zip -CompressionLevel Optimal
 $commit = { param($dir) (git -C $dir rev-parse HEAD).Trim() }
 $info = [ordered]@{
     name = 'TempleFrog'; version = $Version; platform = 'windows-x64'
@@ -96,6 +96,8 @@ $info = [ordered]@{
     rom_sha1 = '7b4c27009198df18555e63fb5dcad223eaf09815'
     bios_sha1 = '300c20df6731a33952ded8c436f7f186d25d3492'
     toolchain = 'MSYS2 MinGW-w64 GCC, CMake Release (-O3)'
+    game_kit = (Get-Content (Join-Path $build 'gamekit\KIT_ID') -Raw).Trim()
+    game_compiler = (Get-Content (Join-Path $build 'gamekit\zig\VERSION') -Raw).Trim()
 }
 $info | ConvertTo-Json | Set-Content (Join-Path $out 'BUILDINFO.json') -Encoding utf8
 $sums = foreach ($f in (Get-Item $zip), (Get-Item (Join-Path $out 'BUILDINFO.json'))) {

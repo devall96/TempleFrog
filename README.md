@@ -72,11 +72,13 @@ The game graphics in these screenshots come from a legally obtained copy of the 
 
 1. Download **[TempleFrog-0.1.1-windows-x64.zip](https://github.com/devall96/TempleFrog/releases/latest)** and unzip it anywhere you can write to (not *Program Files*).
 2. Put your ROM in `roms\frog_us.gba` and your BIOS in `bios\gba_bios.bin`, or start `TempleFrog.exe` and pick them in the launcher (Play → *Browse For ROM*, Settings → *BIOS*).
-3. Run **TempleFrog.exe** and press **PLAY**.
+3. Run **TempleFrog.exe** and press **PLAY**. The first time, TempleFrog builds the game from your ROM and BIOS, which takes a minute or two behind a progress window; after that it starts straight away.
+
+**Why the first start builds the game:** TempleFrog's download holds no code or data from the game. Your own ROM and BIOS are recompiled and compiled on your PC with the game kit that comes with TempleFrog (in the `gamekit` folder: TempleFrog's recompiler and the [Zig](https://ziglang.org) C++ compiler). The result goes in the `native` folder. It is built again only when an update changes the recompiler, or when you pick a different ROM or BIOS.
 
 **On Linux and the Steam Deck:** download **TempleFrog-0.1.1-linux-x86_64.AppImage**, make it executable (`chmod +x`, or *Properties → Permissions* in your file manager) and run it; pick your ROM and BIOS in the launcher. It needs a 64-bit distro with glibc 2.27 or newer (Ubuntu 20.04, Debian 10, Fedora 29, any SteamOS 3 and later) and OpenGL. TempleFrog runs from `~/.local/share/TempleFrog`, where your saves and settings live; an empty `portable.txt` next to the AppImage keeps everything in a `TempleFrog-data` folder beside it instead. On a Steam Deck, add the AppImage to Steam (*Add a Non-Steam Game*) to play it in Game Mode.
 
-**With [RecompLauncher](https://recomplauncher.com)** (Windows, Linux and the Steam Deck): install TempleFrog there and pick your ROM (the .gba, or a .zip with it inside) on its setup screen; it checks the ROM, starts the game straight away and has TempleFrog's settings on the game's page. The BIOS still goes in the `bios` folder as `gba_bios.bin` (next to `TempleFrog.exe`, or in `~/.local/share/TempleFrog` on Linux; the game page's *Game folder* button opens it), or TempleFrog asks for it on the first start. [Quiver Launcher](https://quiverlauncher.com) lists TempleFrog too. Scripts and shortcuts can start straight into the game with `TempleFrog.exe --game <your ROM>` (or `TempleFrog-0.1.1-linux-x86_64.AppImage --game <your ROM>`).
+**With [RecompLauncher](https://recomplauncher.com)** (Windows, Linux and the Steam Deck): install TempleFrog there and pick your ROM (the .gba, or a .zip with it inside) on its setup screen; it checks the ROM, builds the game from it (once, a minute or two), starts the game straight away and has TempleFrog's settings on the game's page. The BIOS still goes in the `bios` folder as `gba_bios.bin` (next to `TempleFrog.exe`, or in `~/.local/share/TempleFrog` on Linux; the game page's *Game folder* button opens it), or TempleFrog asks for it on the first start. [Quiver Launcher](https://quiverlauncher.com) lists TempleFrog too. Scripts and shortcuts can start straight into the game with `TempleFrog.exe --game <your ROM>` (or `TempleFrog-0.1.1-linux-x86_64.AppImage --game <your ROM>`).
 
 In game, **Esc** opens the menu (on a controller: click a stick, or Select + Start). The launcher checks your files against these:
 
@@ -91,38 +93,29 @@ Only the USA release is supported in 0.1.
 
 - **Nothing is sent anywhere.** No accounts, no telemetry, no update checks, no network use at all.
 - Your save and save states are in the `saves` folder next to `TempleFrog.exe`; your settings in `config.ini`, `input.ini` and `templefrog.ini` in the same folder. Delete them to start over.
-- Box art and the launcher backdrop are made once from your ROM into `assets\img`, on your PC.
+- The game built from your ROM and BIOS is in the `native` folder, and box art and the launcher backdrop are made once from your ROM into `assets\img`. All of it stays on your PC.
 
 ## Building it
 
-Windows with [MSYS2](https://www.msys2.org) MINGW64 (`mingw-w64-x86_64-toolchain cmake ninja SDL2`), your ROM at `roms\frog_us.gba` and your BIOS at `gbarecomp\bios\gba_bios.bin`:
+TempleFrog builds without a ROM: like the release, it makes the game from the player's ROM at run time (game modules, [`gbarecomp/docs/GAME_MODULES.md`](https://github.com/devall96/gbarecomp/blob/templefrog/presentation/docs/GAME_MODULES.md)). On Windows with [MSYS2](https://www.msys2.org) MINGW64 (`mingw-w64-x86_64-toolchain cmake ninja SDL2`) and Python 3:
 
 ```powershell
 git clone --recurse-submodules https://github.com/devall96/TempleFrog.git
 cd TempleFrog
 $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
-cmake -S gbarecomp -B gbarecomp\build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build gbarecomp\build --target gba_recompile
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\regen.ps1
+python tools\zig_toolchain.py --platform windows --dest tools\toolchain-cache\zig-windows
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build --target TempleFrog
+cmake --build build
 build\TempleFrog.exe game.toml
 ```
 
-On Linux (`build-essential cmake ninja-build libsdl2-dev`, or your distro's equivalents), with the same ROM and BIOS paths:
+`tools\zig_toolchain.py` downloads Zig 0.17.1 from ziglang.org (100 MB), checks its SHA-256 and trims it to what the game kit needs. The build puts the kit in `build\gamekit`; the first start builds the game from your ROM into `build\native`. `TempleFrog.exe --kit-selftest` checks the kit without a ROM.
 
-```bash
-cmake -S gbarecomp -B gbarecomp/build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build gbarecomp/build --target gba_recompile
-tools/regen.sh
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build --target TempleFrog
-build/TempleFrog game.toml
-```
+On Linux (`build-essential cmake ninja-build libsdl2-dev python3`, or your distro's equivalents), the same with `--platform linux --dest tools/toolchain-cache/zig-linux` and `build/TempleFrog game.toml`.
 
-The Linux release is `tools/release_appimage.sh x.y.z`: it builds in an AlmaLinux 8 container with podman (glibc 2.28, so the AppImage runs on old systems and every Steam Deck) and packs it with [appimagetool](https://github.com/AppImage/appimagetool) from `tools/appimagetool-x86_64.AppImage`. `tools/test_appimage_distros.sh <AppImage>` boots it to the title screen and opens the launcher in Ubuntu 20.04/22.04, Debian 11, AlmaLinux 8, Fedora 36/latest and Arch containers.
+For quick work on the game itself, `-DTEMPLEFROG_GAME_MODULES=OFF` links the code from `generated\` instead: run `tools\regen.ps1` (or `tools/regen.sh`) with your ROM at `roms\frog_us.gba` and your BIOS at `gbarecomp\bios\gba_bios.bin` first. Such a build carries the game and must never be published; the packaging scripts refuse it.
 
-`tools\regen.ps1` checks the ROM's SHA-1 and generates the native code into `generated\` (never committed). `tools\package_release.ps1 -Version x.y.z` makes the release zip and refuses to package ROMs, BIOS files, saves, settings, images made from the ROM or personal paths. `tools\perf\run_suite.ps1` is the frame-time suite (1% and 0.1% lows, hitches, stutter). Research notes are in [`docs/`](docs).
+Releases: `tools\package_release.ps1 -Version x.y.z` makes the Windows zip. The Linux AppImage is built by GitHub Actions ([`.github/workflows/linux.yml`](.github/workflows/linux.yml)), or locally with `tools/release_appimage.sh x.y.z`, in an AlmaLinux 8 container with podman (glibc 2.28, so it runs on old systems and every Steam Deck), and checked by `tools/test_appimage_distros.sh` on Ubuntu 20.04/22.04, Debian 11, AlmaLinux 8, Fedora 36/latest and Arch. Every package goes through `tools/audit_package.py`, which refuses ROMs, BIOS files, saves, settings, images made from the ROM, code recompiled from the ROM or BIOS, and personal paths. `tools\perf\run_suite.ps1` is the frame-time suite (1% and 0.1% lows, hitches, stutter). Research notes are in [`docs/`](docs).
 
 ## Who did what
 

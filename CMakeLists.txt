@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(TempleFrog VERSION 0.1.1 LANGUAGES C CXX)
+project(TempleFrog VERSION 0.2.0 LANGUAGES C CXX)
 set(GBARECOMP_GAME_VERSION "${PROJECT_VERSION}" CACHE STRING "Player-visible game build version" FORCE)
 
 set(CMAKE_C_STANDARD 11)
@@ -20,19 +20,60 @@ set(GBARECOMP_ENABLE_MODS ON CACHE BOOL "Enable TempleFrog's mod catalog" FORCE)
 set(GBARECOMP_EMBED_SRC_DIR OFF CACHE BOOL "Keep the build machine path out of TempleFrog.exe" FORCE)
 set(GBARECOMP_ENABLE_HQ2X ON CACHE BOOL "Build the optional HQ2x presentation library" FORCE)
 
+# Game modules (gbarecomp/docs/GAME_MODULES.md). ON: TempleFrog.exe carries no code made
+# from the ROM or BIOS; the player's copies are recompiled and compiled into
+# modules on their machine with the game kit (build/gamekit). Releases are built
+# this way. OFF: the code from generated/ (tools/regen.ps1) is linked in, for
+# quick work on the game itself.
+option(TEMPLEFROG_GAME_MODULES "Build the game from the player's ROM at run time" ON)
+set(GBARECOMP_GAME_MODULE ${TEMPLEFROG_GAME_MODULES} CACHE BOOL "" FORCE)
+
 add_subdirectory("${GBARECOMP_ROOT}" gbarecomp_build EXCLUDE_FROM_ALL)
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/recompiled.cpp")
-    message(FATAL_ERROR "Stale monolithic generated/recompiled.cpp found. Run tools/regen.ps1.")
-endif()
-file(GLOB GAME_GENERATED_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/generated/*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/generated/*.cpp")
-if(NOT GAME_GENERATED_SOURCES)
-    message(FATAL_ERROR "No generated sources. Run tools/regen.ps1 with your ROM first.")
+set(GAME_GENERATED_SOURCES)
+if(NOT TEMPLEFROG_GAME_MODULES)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/recompiled.cpp")
+        message(FATAL_ERROR "Stale monolithic generated/recompiled.cpp found. Run tools/regen.ps1.")
+    endif()
+    file(GLOB GAME_GENERATED_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/generated/*.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/generated/*.cpp")
+    if(NOT GAME_GENERATED_SOURCES)
+        message(FATAL_ERROR "No generated sources. Run tools/regen.ps1 with your ROM first, "
+                            "or build with -DTEMPLEFROG_GAME_MODULES=ON.")
+    endif()
 endif()
 
-add_executable(TempleFrog src/main.cpp src/gax_hq.cpp src/game_policy.cpp src/launch_checks.cpp ${GAME_GENERATED_SOURCES})
+add_executable(TempleFrog src/main.cpp src/gax_hq.cpp src/game_policy.cpp src/launch_checks.cpp
+    src/game_build.cpp src/build_screen.cpp ${GAME_GENERATED_SOURCES})
+if(TEMPLEFROG_GAME_MODULES)
+    target_compile_definitions(TempleFrog PRIVATE TEMPLEFROG_GAME_MODULES=1)
+    # The recompiler players run: one file, no compiler runtime DLLs beside it.
+    if(MINGW)
+        target_link_options(gba_recompile PRIVATE -static)
+    elseif(UNIX)
+        target_link_options(gba_recompile PRIVATE -static-libstdc++ -static-libgcc)
+    endif()
+    # The game kit next to the program (tools/make_gamekit.py): the recompiler,
+    # the module SDK and the compiler (tools/zig_toolchain.py).
+    if(WIN32)
+        set(TEMPLEFROG_ZIG_PLATFORM windows)
+    else()
+        set(TEMPLEFROG_ZIG_PLATFORM linux)
+    endif()
+    set(TEMPLEFROG_ZIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tools/toolchain-cache/zig-${TEMPLEFROG_ZIG_PLATFORM}"
+        CACHE PATH "Trimmed Zig for the game kit (python tools/zig_toolchain.py)")
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_custom_target(templefrog_gamekit ALL
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/make_gamekit.py"
+            --dest "$<TARGET_FILE_DIR:TempleFrog>/gamekit"
+            --recompiler "$<TARGET_FILE:gba_recompile>"
+            --zig "${TEMPLEFROG_ZIG_DIR}"
+        DEPENDS gba_recompile
+        COMMENT "Assembling the game kit"
+        VERBATIM)
+    add_dependencies(templefrog_gamekit TempleFrog)
+endif()
 
 set(GAME_RECOMPILED_SOURCES ${GAME_GENERATED_SOURCES})
 list(FILTER GAME_RECOMPILED_SOURCES INCLUDE REGEX "/recompiled_[0-9]+\\.cpp$")
@@ -89,7 +130,9 @@ if(GBAGAME_RECOMP_UI)
     endif()
     target_link_libraries(TempleFrog PRIVATE game_launcher_ui)
     target_sources(TempleFrog PRIVATE src/boxart.cpp)
-    set_property(SOURCE src/main.cpp APPEND PROPERTY COMPILE_DEFINITIONS GBAGAME_RECOMP_UI)
+    set_property(SOURCE src/main.cpp src/build_screen.cpp APPEND PROPERTY COMPILE_DEFINITIONS GBAGAME_RECOMP_UI)
+    # The build screen (src/build_screen.cpp) draws with recomp-ui's Dear ImGui.
+    target_include_directories(TempleFrog PRIVATE "${RECOMP_UI_ROOT}/src/third_party/imgui")
 endif()
 
 # Optional HQ2x library next to the exe (replaceable DLL; LGPL hqx).

@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -14,12 +15,19 @@
 #include "boxart.h"
 #include "game_launcher_boot.h"
 #endif
+#if defined(TEMPLEFROG_GAME_MODULES)
+#include "build_screen.h"
+#include "game_build.h"
+#include "game_module.h"
+#endif
 
 namespace {
 
 void print_usage() {
     std::printf("TempleFrog [--no-launcher] [--game <rom>] [--bios <path>] [--rom <path>] [game.toml]\n"
-                "  --game <rom>  start straight into the game with this ROM, using the saved settings\n");
+                "  --game <rom>  start straight into the game with this ROM, using the saved settings\n"
+                "  --prepare --game <rom>  build the game from this ROM (and the BIOS, when it is\n"
+                "                in place) without a window, printing progress lines, and exit\n");
 }
 
 }  // namespace
@@ -56,6 +64,141 @@ static std::string take_game_arg(std::vector<std::string>& args) {
     }
     return {};
 }
+
+static bool has_arg(const std::vector<std::string>& args, const char* prefix);
+static void prepare_game_start(std::vector<std::string>& args, const char* argv0);
+
+#if defined(TEMPLEFROG_GAME_MODULES)
+// Game modules (src/game_build.h): the code made from the player's ROM and
+// BIOS, built on this machine. Called by the runtime once both are verified.
+struct NativeCodeContext {
+    std::string exe_dir;
+};
+
+static int prepare_native_code(const char* rom_path, const char* rom_sha1, const char* bios_path,
+                               const char* bios_sha1, void* user) {
+    const auto* ctx = static_cast<const NativeCodeContext*>(user);
+    const TfBuildPaths paths = tf_build_paths(ctx->exe_dir);
+    const bool retail_bios = std::strcmp(bios_sha1, kTfRetailBiosSha1) == 0;
+    const bool need_cart = !tf_module_current(paths, TfModule::Cart, rom_sha1);
+    const bool need_bios = retail_bios && !tf_module_current(paths, TfModule::Bios, bios_sha1);
+    if (need_cart || need_bios) {
+        // The box-art helper (src/boxart.cpp) only ever uses a finished build.
+        if (const char* e = std::getenv("TEMPLEFROG_BOXART_HELPER"); e && *e && *e != '0')
+            return kExitBuildFailed;
+        if (!tf_build_kit_present(paths)) {
+            std::fprintf(stderr, "[templefrog] the game kit is missing from %s; reinstall "
+                                 "TempleFrog (exit %d)\n", paths.kit_dir.c_str(), kExitKitMissing);
+            return kExitKitMissing;
+        }
+        const std::string rom = rom_path, bios = bios_path, rsha = rom_sha1, bsha = bios_sha1;
+        auto job = [&](const TfProgress& progress, std::string* error) {
+            // The cart takes most of the time; the BIOS is small.
+            auto part = [&progress](float from, float to) -> TfProgress {
+                return [&progress, from, to](float f, const std::string& text) {
+                    progress(from + (to - from) * f, text);
+                };
+            };
+            const float split = need_cart && need_bios ? 0.9f : (need_cart ? 1.0f : 0.0f);
+            if (need_cart &&
+                !tf_build_module(paths, TfModule::Cart, rom, rsha, part(0.0f, split), error))
+                return false;
+            if (need_bios &&
+                !tf_build_module(paths, TfModule::Bios, bios, bsha, part(split, 1.0f), error))
+                return false;
+            return true;
+        };
+        std::string error;
+        if (!tf_run_build_screen(job, paths.out_dir + "/build.log", &error)) {
+            if (error.empty()) return kExitBuildClosed;
+            std::fprintf(stderr, "[templefrog] building the game failed: %s (exit %d)\n",
+                         error.c_str(), kExitBuildFailed);
+            return kExitBuildFailed;
+        }
+    }
+    std::string error;
+    if (!gbarecomp::load_game_module(tf_module_path(paths, TfModule::Cart),
+                                     gbarecomp::GameModuleKind::Cart, rom_sha1, &error)) {
+        std::fprintf(stderr, "[templefrog] %s (exit %d)\n", error.c_str(), kExitBuildFailed);
+        return kExitBuildFailed;
+    }
+    if (!retail_bios) {
+        std::fprintf(stderr, "[templefrog] this BIOS isn't the retail dump; the runtime's "
+                             "BIOS replacements (HLE) stand in for it\n");
+    } else if (!gbarecomp::load_game_module(tf_module_path(paths, TfModule::Bios),
+                                            gbarecomp::GameModuleKind::Bios, bios_sha1, &error)) {
+        std::fprintf(stderr, "[templefrog] %s; the runtime's BIOS replacements (HLE) stand in "
+                             "for it\n", error.c_str());
+    }
+    return 0;
+}
+
+// --prepare --game <rom>: RecompLauncher's setup step. Builds the game from the
+// ROM (and the BIOS when it's in place) without a window. Prints
+// "progress <0..1> <text>" lines and exits 0, or with one of the exit codes in
+// launch_checks.h.
+static int run_prepare(std::string rom, const std::string& exe_dir) {
+    std::string rom_sha1;
+    if (const int code = templefrog_check_game(rom, exe_dir, &rom_sha1)) return code;
+    const TfBuildPaths paths = tf_build_paths(exe_dir);
+    if (!tf_build_kit_present(paths)) {
+        std::fprintf(stderr, "[templefrog] the game kit is missing from %s (exit %d)\n",
+                     paths.kit_dir.c_str(), kExitKitMissing);
+        return kExitKitMissing;
+    }
+    const std::string bios = templefrog_find_bios(exe_dir);
+    const std::string bios_sha1 = bios.empty() ? std::string() : templefrog_file_sha1(bios);
+    const bool need_cart = !tf_module_current(paths, TfModule::Cart, rom_sha1);
+    const bool need_bios = bios_sha1 == kTfRetailBiosSha1 &&
+                           !tf_module_current(paths, TfModule::Bios, bios_sha1);
+    const float split = need_cart && need_bios ? 0.9f : (need_cart ? 1.0f : 0.0f);
+    auto line = [](float from, float to) -> TfProgress {
+        return [from, to](float f, const std::string& text) {
+            std::printf("progress %.3f %s\n", from + (to - from) * f, text.c_str());
+            std::fflush(stdout);
+        };
+    };
+    std::string error;
+    if (need_cart &&
+        !tf_build_module(paths, TfModule::Cart, rom, rom_sha1, line(0.0f, split), &error)) {
+        std::fprintf(stderr, "[templefrog] building the game failed: %s (exit %d)\n",
+                     error.c_str(), kExitBuildFailed);
+        return kExitBuildFailed;
+    }
+    if (need_bios &&
+        !tf_build_module(paths, TfModule::Bios, bios, bios_sha1, line(split, 1.0f), &error)) {
+        std::fprintf(stderr, "[templefrog] building the BIOS failed: %s (exit %d)\n",
+                     error.c_str(), kExitBuildFailed);
+        return kExitBuildFailed;
+    }
+    std::printf("progress 1 Ready\n");
+    return 0;
+}
+
+// --kit-selftest: builds and loads a stand-in module with the game kit, no ROM
+// needed (CI, and a first check for a player whose build fails).
+extern "C" int runtime_has_static_entry(uint32_t pc, int thumb);
+static int run_kit_selftest(const std::string& exe_dir) {
+    const TfBuildPaths paths = tf_build_paths(exe_dir);
+    if (!tf_build_kit_present(paths)) {
+        std::fprintf(stderr, "kit-selftest: the game kit is missing from %s\n", paths.kit_dir.c_str());
+        return kExitKitMissing;
+    }
+    std::string error;
+    const std::string module = tf_kit_selftest(paths, &error);
+    if (module.empty()) {
+        std::fprintf(stderr, "kit-selftest: build failed: %s\n", error.c_str());
+        return kExitBuildFailed;
+    }
+    if (!gbarecomp::load_game_module(module, gbarecomp::GameModuleKind::Cart, "selftest", &error) ||
+        !runtime_has_static_entry(0x08000000u, 0)) {
+        std::fprintf(stderr, "kit-selftest: load failed: %s\n", error.c_str());
+        return kExitBuildFailed;
+    }
+    std::printf("kit-selftest: ok (%s)\n", module.c_str());
+    return 0;
+}
+#endif
 
 static bool has_arg(const std::vector<std::string>& args, const char* prefix) {
     for (size_t i = 1; i < args.size(); ++i)
@@ -97,6 +240,27 @@ int main(int argc, char** argv) {
         const std::filesystem::path exe = std::filesystem::absolute(argv[0], ec);
         if (!ec && exe.has_parent_path()) exe_dir = exe.parent_path().string();
     }
+    bool prepare = false;
+    for (int i = 1; i < argc; ++i)
+        if (std::strcmp(argv[i], "--prepare") == 0) prepare = true;
+#if defined(TEMPLEFROG_GAME_MODULES)
+    for (int i = 1; i < argc; ++i)
+        if (std::strcmp(argv[i], "--kit-selftest") == 0) return run_kit_selftest(exe_dir);
+    if (prepare) {
+        // RecompLauncher reads the progress lines from stdout: no log redirect.
+        std::vector<std::string> args(argv, argv + argc);
+        const std::string rom = take_game_arg(args);
+        if (rom.empty()) {
+            std::fprintf(stderr, "[templefrog] --prepare needs --game <rom> (exit %d)\n",
+                         kExitRomMissing);
+            return kExitRomMissing;
+        }
+        prepare_game_start(args, argv[0]);
+        return run_prepare(rom, exe_dir);
+    }
+#else
+    if (prepare) return 0;  // the game is linked in: nothing to prepare
+#endif
     templefrog_start_log(exe_dir);
 
     gbarecomp::RunOptions opts;
@@ -175,6 +339,13 @@ int main(int argc, char** argv) {
     opts.launcher_default_sharp_filter = false;
     opts.launcher_expose_affine_filter = true;
     opts.launcher_default_affine_filter = false;
+
+#if defined(TEMPLEFROG_GAME_MODULES)
+    static NativeCodeContext native_ctx;
+    native_ctx.exe_dir = exe_dir;
+    opts.prepare_native_code = prepare_native_code;
+    opts.prepare_native_code_user = &native_ctx;
+#endif
 
 #if defined(GBAGAME_RECOMP_UI)
     // Launcher art from the player's own ROM (first launch only; no-op once made).

@@ -147,10 +147,12 @@ bool run_hidden(const fs::path& exe, const std::vector<fs::path>& args, const fs
     PROCESS_INFORMATION pi{};
     SetEnvironmentVariableW(L"GBARECOMP_DIAGNOSTICS", L"0");
     SetEnvironmentVariableW(L"TEMPLEFROG_NO_BOXART", L"1");
+    SetEnvironmentVariableW(L"TEMPLEFROG_BOXART_HELPER", L"1");  // never builds the game
     const BOOL ok = CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE,
                                    CREATE_NO_WINDOW, nullptr, cwd.wstring().c_str(), &si, &pi);
     SetEnvironmentVariableW(L"GBARECOMP_DIAGNOSTICS", nullptr);
     SetEnvironmentVariableW(L"TEMPLEFROG_NO_BOXART", nullptr);
+    SetEnvironmentVariableW(L"TEMPLEFROG_BOXART_HELPER", nullptr);
     if (!ok) return false;
     const bool done = WaitForSingleObject(pi.hProcess, timeout_ms) == WAIT_OBJECT_0;
     DWORD code = 1;
@@ -179,6 +181,7 @@ bool run_hidden(const fs::path& exe, const std::vector<fs::path>& args, const fs
     if (pid == 0) {
         setenv("GBARECOMP_DIAGNOSTICS", "0", 1);
         setenv("TEMPLEFROG_NO_BOXART", "1", 1);
+        setenv("TEMPLEFROG_BOXART_HELPER", "1", 1);  // never builds the game
         setenv("SDL_VIDEODRIVER", "dummy", 1);   // --no-window; never open a display
         setenv("SDL_AUDIODRIVER", "dummy", 1);
         if (const int null = open("/dev/null", O_RDWR); null >= 0) {

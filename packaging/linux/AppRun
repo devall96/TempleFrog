@@ -10,8 +10,9 @@
 #   is next to it, else $XDG_DATA_HOME/TempleFrog (~/.local/share/TempleFrog)
 #
 # The copy is refreshed when this AppImage is a different build. Only files the
-# AppImage ships are replaced; roms/, bios/, saves/, logs/, *.ini, *.cfg,
-# mods/state.toml and the generated box art are never touched.
+# AppImage ships are replaced; roms/, bios/, saves/, logs/, native/ (the game
+# built from the player's ROM), *.ini, *.cfg, mods/state.toml and the generated
+# box art are never touched.
 set -eu
 
 HERE="$(dirname "$(readlink -f "$0")")"
@@ -47,6 +48,10 @@ fi
 # AppImage itself ($APPIMAGE), and give spawned host tools the original library path.
 export RECOMP_APPIMAGE_PATH="${APPIMAGE:-}"
 export RECOMP_HOST_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
+# The game kit (recompiler and compiler that build the game from the player's
+# ROM, gbarecomp/docs/GAME_MODULES.md) runs from the image itself; only what it builds
+# (native/) lands in the data folder.
+export TEMPLEFROG_KIT_DIR="$PAYLOAD/gamekit"
 
 cd "$DATA"
 exec "$DATA/TempleFrog" "$@"

@@ -59,20 +59,25 @@ std::string toml_bios_path() {
     return {};
 }
 
-bool bios_available(const std::string& exe_dir) {
+std::string find_bios(const std::string& exe_dir) {
     std::error_code ec;
     const std::string from_toml = toml_bios_path();
-    if (!from_toml.empty() && fs::exists(from_toml, ec)) return true;
+    if (!from_toml.empty() && fs::exists(from_toml, ec)) return from_toml;
     std::ifstream cfg(fs::path(exe_dir) / "bios.cfg");   // the picker's remembered choice
     std::string cached;
     if (std::getline(cfg, cached)) {
         while (!cached.empty() && (cached.back() == '\r' || cached.back() == ' ')) cached.pop_back();
-        fs::path p(cached);
+        fs::path p = fs::u8path(cached);
         if (p.is_relative()) p = fs::path(exe_dir) / p;
-        if (!cached.empty() && fs::exists(p, ec)) return true;
+        if (!cached.empty() && fs::exists(p, ec)) {
+            const auto u8 = p.u8string();
+            return std::string(u8.begin(), u8.end());
+        }
     }
-    return false;
+    return {};
 }
+
+bool bios_available(const std::string& exe_dir) { return !find_bios(exe_dir).empty(); }
 
 int fail(int code, const char* message) {
     std::fprintf(stderr, "[templefrog] %s (exit %d)\n", message, code);
@@ -106,7 +111,17 @@ void templefrog_start_log(const std::string& exe_dir) {
     std::setvbuf(stderr, nullptr, _IONBF, 0);
 }
 
-int templefrog_check_game(std::string& rom_path, const std::string& exe_dir) {
+std::string templefrog_find_bios(const std::string& exe_dir) { return find_bios(exe_dir); }
+
+std::string templefrog_file_sha1(const std::string& path) {
+    std::ifstream in(fs::u8path(path), std::ios::binary);
+    if (!in) return {};
+    std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    return gba::sha1(bytes.data(), bytes.size()).hex();
+}
+
+int templefrog_check_game(std::string& rom_path, const std::string& exe_dir,
+                          std::string* rom_sha1) {
     std::ifstream in(fs::u8path(rom_path), std::ios::binary);
     if (!in) return fail(kExitRomMissing, "could not open the ROM");
     std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
@@ -142,6 +157,7 @@ int templefrog_check_game(std::string& rom_path, const std::string& exe_dir) {
         return fail(kExitEuropeanRom, "this is the European release; TempleFrog needs the USA one (AFRE)");
     if (sha != kUsaSha1)
         return fail(kExitWrongRom, "this ROM isn't Frogger's Adventures: Temple of the Frog (USA)");
+    if (rom_sha1) *rom_sha1 = sha;
 
     const char* mode = std::getenv("RECOMPLAUNCHER_MODE");
     if (mode && std::strcmp(mode, "bigpicture") == 0 && !bios_available(exe_dir))

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # The Linux release: build the AppImage inside the AlmaLinux 8 container
 # (tools/appimage-builder.Containerfile, glibc 2.28) so it runs on old systems,
-# Steam Deck included. Needs podman, generated/ (tools/regen.sh) and appimagetool
-# at tools/appimagetool-x86_64.AppImage.
+# Steam Deck included. Needs podman and appimagetool at
+# tools/appimagetool-x86_64.AppImage; no ROM (the AppImage carries no game code,
+# gbarecomp/docs/GAME_MODULES.md), so GitHub Actions runs it too (.github/workflows/linux.yml).
 #
 #   tools/release_appimage.sh <version>
 set -euo pipefail

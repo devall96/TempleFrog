@@ -19,6 +19,10 @@ Getting started
    or put them in ~/.local/share/TempleFrog/roms/frog_us.gba and .../bios/gba_bios.bin.
 3. Press PLAY.
 
+The first start builds the game from your ROM and BIOS (a minute or two, once). The AppImage holds no
+code or data from the game: its game kit (TempleFrog's recompiler and the Zig compiler) makes it on your
+machine, into ~/.local/share/TempleFrog/native.
+
 TempleFrog runs from ~/.local/share/TempleFrog (or $TEMPLEFROG_HOME if you set it): the
 AppImage copies the program there on first start and after an update. For a portable setup, put an
 empty portable.txt next to the AppImage: everything then lives in TempleFrog-data beside it.

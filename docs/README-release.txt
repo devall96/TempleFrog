@@ -18,6 +18,10 @@ Getting started
    or start TempleFrog.exe and pick them in the launcher.
 3. Run TempleFrog.exe and press PLAY.
 
+The first start builds the game from your ROM and BIOS (a minute or two, once). This download holds no
+code or data from the game: the game kit in the gamekit folder (TempleFrog's recompiler and the Zig
+compiler) makes it on your PC, into the native folder.
+
 In game, Esc (or L3 / R3, or Select + Start on a controller) opens the menu: graphics, audio, save states,
 rewind, language, rumble, the speedrun timer and more.
 
