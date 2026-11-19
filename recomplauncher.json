@@ -5,7 +5,7 @@
   "repo": "devall96/TempleFrog",
   "game": {
     "kind": "iso",
-    "label": "Your ROM of Frogger's Adventures: Temple of the Frog (USA): the .gba file, or a .zip with it inside. TempleFrog also needs your own Game Boy Advance BIOS: put it in bios\\gba_bios.bin in the game's folder, or pick it when TempleFrog asks.",
+    "label": "Your ROM of Frogger's Adventures: Temple of the Frog (USA): the .gba file, or a .zip with it inside. TempleFrog also needs your own Game Boy Advance BIOS: put it in the bios folder as gba_bios.bin (the Game folder button opens it), or pick it when TempleFrog asks.",
     "dumps": [
       {
         "name": "USA (No-Intro)",
@@ -16,7 +16,8 @@
   },
   "start": {
     "program": [
-      "TempleFrog.exe"
+      "TempleFrog.exe",
+      "TempleFrog.AppImage"
     ],
     "args": [
       "--game",
@@ -27,7 +28,9 @@
     }
   },
   "saves": [
-    "{install}/saves"
+    "{install}/saves",
+    "{install}/TempleFrog-data/saves",
+    "{local}/TempleFrog/saves"
   ],
   "config": [
     {
@@ -35,7 +38,15 @@
       "format": "ini",
       "file": [
         {
-          "path": "{install}/config.ini"
+          "path": "{install}/config.ini",
+          "if": "{install}/TempleFrog.exe"
+        },
+        {
+          "path": "{install}/TempleFrog-data/config.ini",
+          "if": "{install}/portable.txt"
+        },
+        {
+          "path": "{local}/TempleFrog/config.ini"
         }
       ]
     },
@@ -44,7 +55,15 @@
       "format": "ini",
       "file": [
         {
-          "path": "{install}/templefrog.ini"
+          "path": "{install}/templefrog.ini",
+          "if": "{install}/TempleFrog.exe"
+        },
+        {
+          "path": "{install}/TempleFrog-data/templefrog.ini",
+          "if": "{install}/portable.txt"
+        },
+        {
+          "path": "{local}/TempleFrog/templefrog.ini"
         }
       ]
     }
@@ -52,17 +71,41 @@
   "folders": {
     "saves": [
       {
-        "path": "{install}/saves"
+        "path": "{install}/saves",
+        "if": "{install}/TempleFrog.exe"
+      },
+      {
+        "path": "{install}/TempleFrog-data/saves",
+        "if": "{install}/portable.txt"
+      },
+      {
+        "path": "{local}/TempleFrog/saves"
       }
     ],
     "logs": [
       {
-        "path": "{install}/logs"
+        "path": "{install}/logs",
+        "if": "{install}/TempleFrog.exe"
+      },
+      {
+        "path": "{install}/TempleFrog-data/logs",
+        "if": "{install}/portable.txt"
+      },
+      {
+        "path": "{local}/TempleFrog/logs"
       }
     ],
     "game": [
       {
-        "path": "{install}"
+        "path": "{install}",
+        "if": "{install}/TempleFrog.exe"
+      },
+      {
+        "path": "{install}/TempleFrog-data",
+        "if": "{install}/portable.txt"
+      },
+      {
+        "path": "{local}/TempleFrog"
       }
     ]
   },
@@ -536,7 +579,7 @@
     {
       "id": "game_folder",
       "label": "Game folder",
-      "help": "TempleFrog's folder: put your BIOS in its bios folder as gba_bios.bin.",
+      "help": "TempleFrog's folder (on Linux, ~/.local/share/TempleFrog): put your BIOS in its bios folder as gba_bios.bin.",
       "open": "game"
     }
   ]
