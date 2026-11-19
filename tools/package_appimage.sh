@@ -109,8 +109,6 @@ cp "$root/recomp-ui/assets/common/fonts/NOTICE.md" "$lic/Launcher-fonts-NOTICE.m
     cp "$root/recomp-ui/src/third_party/imgui/LICENSE.txt" "$lic/DearImGui-MIT.txt"
 cp "$root/docs/README-release-linux.txt" "$payload/README.txt"
 cp "$root/recomplauncher.json" "$payload/"
-# RecompLauncher reads it from the AppImage's root (https://recomplauncher.com/sdk).
-cp "$root/recomplauncher.json" "$appdir/recomplauncher.json"
 python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$payload/recomplauncher.json"
 
 # Build stamp: AppRun refreshes the player's copy when this changes.
