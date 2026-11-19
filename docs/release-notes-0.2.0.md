@@ -10,7 +10,7 @@
 
 ### 🛠️ What changes for you
 - **The first start builds the game** (a minute or two). After that TempleFrog starts as fast as before. It builds again only when an update changes the recompiler, or when you pick a different ROM or BIOS.
-- **A bigger download** (about 95 MB): it now includes the game kit, TempleFrog's recompiler and the [Zig](https://ziglang.org) C++ compiler, in the `gamekit` folder. The game built from your files goes in the `native` folder.
+- **A bigger download** (about 87 MB on Windows): it now includes the game kit, TempleFrog's recompiler and the [Zig](https://ziglang.org) C++ compiler, in the `gamekit` folder. The game built from your files goes in the `native` folder.
 - **RecompLauncher** builds the game on its setup screen ("Getting the extras"), right after it checks your ROM. Put your BIOS in the `bios` folder first and it builds that too; otherwise TempleFrog does it on the first start.
 - **Linux builds now come from GitHub Actions**, checked on Ubuntu, Debian, AlmaLinux, Fedora and Arch for every release.
 
